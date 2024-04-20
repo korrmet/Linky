@@ -32,10 +32,10 @@ int editor::workspace::handle(int event)
       { context[root / "grid size"] = 5; } }
 
     else if (Fl::event_state() & FL_SHIFT) // move horizontally
-    { }
+    { context[root / "draw pos" / "x"] += Fl::event_dy(); }
 
     else // move vertically
-    { }
+    { context[root / "draw pos" / "y"] += Fl::event_dy(); }
 
     redraw(); return 1; }
 
