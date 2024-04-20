@@ -20,24 +20,22 @@ int editor::workspace::handle(int event)
 
   // zoom action, moving the view area
   if (event == FL_MOUSEWHEEL)
-  { if (!context(root / "draw pos" / "x"))
-    { context[root / "draw pos" / "x"] = 0; }
-    if (!context(root / "draw pos" / "y"))
-    { context[root / "draw pos" / "y"] = 0; }
-    if (!context(root / "grid size")) { context[root / "grid size"] = 20; }
+  { if (!context(root/"draw pos"/"x")) { context[root/"draw pos"/"x"] = 0; }
+    if (!context(root/"draw pos"/"y")) { context[root/"draw pos"/"y"] = 0; }
+    if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
 
     if (Fl::event_state() & FL_CTRL) // zoom
-    { context[root / "grid size"] += Fl::event_dy() * 5;
-      if ((int)context[root / "grid size"] > 100)
-      { context[root / "grid size"] = 100; }
-      else if ((int)context[root / "grid size"] < 5)
-      { context[root / "grid size"] = 5; } }
+    { context[root/"grid size"] += Fl::event_dy() * 5;
+      if ((int)context[root/"grid size"] > 100)
+      { context[root/"grid size"] = 100; }
+      else if ((int)context[root/"grid size"] < 5)
+      { context[root/"grid size"] = 5; } }
 
     else if (Fl::event_state() & FL_SHIFT) // move horizontally
-    { context[root / "draw pos" / "x"] += Fl::event_dy(); }
+    { context[root/"draw pos"/"x"] += Fl::event_dy(); }
 
     else // move vertically
-    { context[root / "draw pos" / "y"] += Fl::event_dy(); }
+    { context[root/"draw pos"/"y"] += Fl::event_dy(); }
 
     redraw(); return 1; }
 
@@ -52,10 +50,10 @@ void editor::workspace::draw()
 
   // grid
   fl_color(0xCCCCFF00);
-  if (!context(root / "grid size")) { context[root / "grid size"] = 20; }
-  for (unsigned int i = 0; i < w(); i += (int)context[root / "grid size"])
+  if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
+  for (unsigned int i = 0; i < w(); i += (int)context[root/"grid size"])
   { fl_line(x() + i, y(), x() + i, y() + h()); }
-  for (unsigned int i = 0; i < h(); i += (int)context[root / "grid size"])
+  for (unsigned int i = 0; i < h(); i += (int)context[root/"grid size"])
   { fl_line(x(), y() + i, x() + w(), y() + i); }
 
   fl_pop_clip(); }
@@ -134,12 +132,12 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
     if (path) { bus(IM("file open") << IV("path", path)); } }
 
   else if (cmd == "save")
-  { if (!params(root / "circruit file path"))
+  { if (!params(root/"circruit file path"))
     { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
       if (path) { bus(IM("file save") << IV("path", path)); } }
     else
     { bus(IM("file save")
-          << IV("path", (std::string)params[root / "circuit file path"])); } }
+          << IV("path", (std::string)params[root/"circuit file path"])); } }
 
   else if (cmd == "save as")
   { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
