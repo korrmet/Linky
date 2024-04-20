@@ -5,7 +5,6 @@
 #include <FL/Fl_Widget.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Menu_Item.H>
 
 namespace editor {
 
@@ -20,7 +19,7 @@ class window : public Fl_Window
   window();
 
   private:
-  static void menu_cb(Fl_Widget* w, void* arg);
+  static void control_cb(Fl_Widget* w, void* arg);
   static void handler(void* ctx, IM mess);
 
   Fl_Menu_Bar menu_bar;
