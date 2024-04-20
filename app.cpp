@@ -17,7 +17,6 @@ int main(int argc, char** argv)
   PRINT("Linky v0\n");
   
   if (argc > 1) { bus(IM("file open") << IV("name", argv[1])); }
-  params[root / "scale factor"] = 1;
 
   editor::window main_window;
   Fl::run(); return 0; }
