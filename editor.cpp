@@ -11,20 +11,38 @@ editor::workspace::workspace(int x, int y, int w, int h)
 
 int editor::workspace::handle(int event)
 { if (event == FL_FOCUS) { return 1; }
-  if (event == FL_KEYDOWN) { return 1; }
+
+  if (event == FL_KEYDOWN)
+  { if (Fl::event_key() == 'w') { bus(IM("add wire")); }
+    else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
+    return 1; }
+
   if (event == FL_ENTER || event == FL_LEAVE) { return 1; }
   if (event == FL_DRAG) { return 1; }
   if (event == FL_MOVE) { return 1; }
-  if (event == FL_PUSH) { return 1; }
+  
+  if (event == FL_PUSH)
+  { if (context[root/"input mode"] == "wire input")
+    { // TODO: make global converter of the current coordinates
+      int s = context[root/"current line"/"size"];
+      int x = Fl::event_x();
+      int y = Fl::event_y();
+      int x0 = context[root/"draw pos"/"x"];
+      int y0 = context[root/"draw pos"/"y"];
+      int gs = context[root/"grid size"];
+      int x_real = (x0 * gs + x) / gs;
+      int y_real = (y0 * gs + y) / gs;
+      context[root/"current line"/s/"x"] = x_real;
+      context[root/"current line"/s/"y"] = y_real;
+      context[root/"current line"/"size"] = s + 1;
+    }
+    return 1; }
+  
   if (event == FL_RELEASE) { return 1; }
 
   // zoom action, moving the view area
   if (event == FL_MOUSEWHEEL)
-  { if (!context(root/"draw pos"/"x")) { context[root/"draw pos"/"x"] = 0; }
-    if (!context(root/"draw pos"/"y")) { context[root/"draw pos"/"y"] = 0; }
-    if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
-
-    if (Fl::event_state() & FL_CTRL) // zoom
+  { if (Fl::event_state() & FL_CTRL) // zoom
     { context[root/"grid size"] += Fl::event_dy() * 5;
       if ((int)context[root/"grid size"] > 100)
       { context[root/"grid size"] = 100; }
@@ -113,6 +131,10 @@ editor::window::window()
   side_screen.add(dummy);
   side_screen.resizable(dummy);
 
+  context[root/"draw pos"/"x"] = 0;
+  context[root/"draw pos"/"y"] = 0;
+  context[root/"grid size"] = 20;
+
   show(); }
 
 void editor::window::control_cb(Fl_Widget* w, void* arg)
@@ -169,6 +191,26 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   //    - user pushes [Esc] key
   //    - current point referencing to the input
   //    - current point referencing to the another line's point
-  else if (cmd == "add wire") { PRINT("not implemented yet...\n"); } }
+  else if (cmd == "add wire") { bus(IM("add wire")); }
+}
 
-void editor::window::handler(void* ctx, IM mess) {}
+// TODO: highlight with the green (0x00AC0000) currently selected buttons
+//       for the current mode
+
+void editor::window::handler(void* ctx, IM mess)
+{ if (mess == "add wire")
+  { context.del(root/"current line");
+    context[root/"current line"/"size"] = 0;
+    context[root/"input mode"] = "wire input"; }
+
+  else if (mess == "end input")
+  { // finalize previous operations
+    if (context[root/"input mode"] == "wire input")
+    { // TODO:
+      // 1) check the current line in context
+      // 2) create new line in the circuit
+      // 3) fill the line with pair of 
+    }
+
+    context[root/"input mode"] = "normal"; }
+}
