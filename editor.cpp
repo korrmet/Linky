@@ -24,7 +24,7 @@ int editor::workspace::handle(int event)
   if (event == FL_PUSH)
   { if (context[root/"input mode"] == "wire input")
     { // TODO: make global converter of the current coordinates
-      int s = context[root/"current line"/"size"];
+      int s = context.ls(root/"current line").size();
       int x = Fl::event_x();
       int y = Fl::event_y();
       int x0 = context[root/"draw pos"/"x"];
@@ -34,8 +34,14 @@ int editor::workspace::handle(int event)
       int y_real = (y0 * gs + y) / gs;
       context[root/"current line"/s/"x"] = x_real;
       context[root/"current line"/s/"y"] = y_real;
-      context[root/"current line"/"size"] = s + 1;
-    }
+
+      if (s == 1)
+      { circuit[root/"lines"];
+        int idx = circuit.ls(root/"lines").size();
+        circuit[root/"lines"/idx];
+        context.cp(root/"current line", root/"lines"/idx, &circuit);
+        context.mv(root/"current line"/1, root/"current line"/0);
+        redraw(); } }
     return 1; }
   
   if (event == FL_RELEASE) { return 1; }
@@ -73,6 +79,27 @@ void editor::workspace::draw()
   { fl_line(x() + i, y(), x() + i, y() + h()); }
   for (unsigned int i = 0; i < h(); i += (int)context[root/"grid size"])
   { fl_line(x(), y() + i, x() + w(), y() + i); }
+
+  // lines
+  fl_color(0x00000000);
+  for (std::string line : circuit.ls(root/"lines"))
+  { int x0 = circuit[root/"lines"/line/0/"x"];
+    x0 -= (int)context[root/"draw pos"/"x"];
+    x0 *= (int)context[root/"grid size"];
+
+    int y0 = circuit[root/"lines"/line/0/"y"];
+    y0 -= (int)context[root/"draw pos"/"y"];
+    y0 *= (int)context[root/"grid size"];
+    
+    int x1 = circuit[root/"lines"/line/1/"x"];
+    x1 -= (int)context[root/"draw pos"/"x"];
+    x1 *= (int)context[root/"grid size"];
+    
+    int y1 = circuit[root/"lines"/line/1/"y"];
+    y1 -= (int)context[root/"draw pos"/"y"];
+    y1 *= (int)context[root/"grid size"];
+    
+    fl_line(x() + x0, y() + y0, x() + x1, y() + y1); }
 
   fl_pop_clip(); }
 
@@ -168,29 +195,6 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "help")
   { fl_message("Linky\nv0\nsimple digital circuit simulator"); }
 
-  // TODO:
-  // Wire is just set of lines. Line can be described as two points. Every
-  // point can have absolute coordinates and also it can points to another
-  // object. In this case, coordinates of object used as coordinates of point.
-  // Point can reference to other points. If one point referenced to multiple
-  // lines, filled circle should be drawn, because of it's an intersection.
-  // 
-  // General rules:
-  // 1) When user clicks 'Wire' button, editor switches to the wire drawing
-  //    mode
-  // 2) In wire drawing mode user clicks on the workspace. Every click produces
-  //    the point.
-  // 3) User can click on empty space of the diagram or on the other objects:
-  //    - unit inputs
-  //    - line points
-  // 4) When user clicks very first time, line would not produces, but
-  //    all of the click afters produces the line
-  // 5) Editor utilized point referencing feature to produce networks. Networks
-  //    always contain at least one input and exactly one output.
-  // 6) Editing is over, when:
-  //    - user pushes [Esc] key
-  //    - current point referencing to the input
-  //    - current point referencing to the another line's point
   else if (cmd == "add wire") { bus(IM("add wire")); }
 }
 
@@ -200,17 +204,11 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 void editor::window::handler(void* ctx, IM mess)
 { if (mess == "add wire")
   { context.del(root/"current line");
-    context[root/"current line"/"size"] = 0;
     context[root/"input mode"] = "wire input"; }
 
   else if (mess == "end input")
-  { // finalize previous operations
+  { // finalize previous operations if needed
     if (context[root/"input mode"] == "wire input")
-    { // TODO:
-      // 1) check the current line in context
-      // 2) create new line in the circuit
-      // 3) fill the line with pair of 
-    }
+    { context.del(root/"current line"); }
 
-    context[root/"input mode"] = "normal"; }
-}
+    context[root/"input mode"] = "normal"; } }
