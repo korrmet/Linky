@@ -6,8 +6,36 @@
 #include "editor.hpp"
 #include "app.hpp"
 
+#define GREEN 0x00AC0000
+#define BLUE  0x0000B400
+#define LBLUE 0xCCCCFF00
+#define BLACK 0x00000000
+#define WHITE 0xFFFFFF00
+
 editor::workspace::workspace(int x, int y, int w, int h)
-: Fl_Widget(x, y, w, h) {}
+: Fl_Widget(x, y, w, h)
+{ 
+}
+
+static int x_real(int x_screen)
+{ int x0 = context[root/"draw pos"/"x"];
+  int gs = context[root/"grid size"];
+  return  (x0 * gs + x_screen) / gs; }
+
+static int y_real(int y_screen)
+{ int y0 = context[root/"draw pos"/"y"];
+  int gs = context[root/"grid size"];
+  return (y0 * gs + y_screen) / gs; }
+
+static int x_screen(int x_real)
+{ x_real -= (int)context[root/"draw pos"/"x"];
+  x_real *= (int)context[root/"grid size"];
+  return x_real; }
+
+static int y_screen(int y_real)
+{ y_real -= (int)context[root/"draw pos"/"y"];
+  y_real *= (int)context[root/"grid size"];
+  return y_real; }
 
 int editor::workspace::handle(int event)
 { if (event == FL_FOCUS) { return 1; }
@@ -17,23 +45,29 @@ int editor::workspace::handle(int event)
     else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
     return 1; }
 
-  if (event == FL_ENTER || event == FL_LEAVE) { return 1; }
+  if (event == FL_ENTER) { /* window->cursor(FL_CURSOR_NONE) */ return 1; }
+  if (event == FL_LEAVE) { /* window->cursor(FL_CURSOR_DEFAULT) */ return 1; }
+
   if (event == FL_DRAG) { return 1; }
-  if (event == FL_MOVE) { return 1; }
+  if (event == FL_MOVE)
+  { int cx = context[root/"cursor pos"/"x"];
+    int cy = context[root/"cursor pos"/"y"];
+    int rx = x_real(Fl::event_x());
+    int ry = y_real(Fl::event_y());
+    
+    if (cx != rx || cy != ry)
+    { context[root/"cursor pos"/"x"] = rx;
+      context[root/"cursor pos"/"y"] = ry;
+      redraw(); }
+
+    return 1; }
   
   if (event == FL_PUSH)
   { if (context[root/"input mode"] == "wire input")
     { // TODO: make global converter of the current coordinates
       int s = context.ls(root/"current line").size();
-      int x = Fl::event_x();
-      int y = Fl::event_y();
-      int x0 = context[root/"draw pos"/"x"];
-      int y0 = context[root/"draw pos"/"y"];
-      int gs = context[root/"grid size"];
-      int x_real = (x0 * gs + x) / gs;
-      int y_real = (y0 * gs + y) / gs;
-      context[root/"current line"/s/"x"] = x_real;
-      context[root/"current line"/s/"y"] = y_real;
+      context[root/"current line"/s/"x"] = x_real(Fl::event_x());
+      context[root/"current line"/s/"y"] = y_real(Fl::event_y());
 
       if (s == 1)
       { circuit[root/"lines"];
@@ -67,13 +101,14 @@ int editor::workspace::handle(int event)
 
 void editor::workspace::draw()
 { fl_push_clip(x(), y(), w(), h());
+  fl_line_style(FL_SOLID, 1);
 
   // background
-  fl_color(0xFFFFFF00);
+  fl_color(WHITE);
   fl_rectf(x(), y(), w(), h());
 
   // grid
-  fl_color(0xCCCCFF00);
+  fl_color(LBLUE);
   if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
   for (unsigned int i = 0; i < w(); i += (int)context[root/"grid size"])
   { fl_line(x() + i, y(), x() + i, y() + h()); }
@@ -81,25 +116,24 @@ void editor::workspace::draw()
   { fl_line(x(), y() + i, x() + w(), y() + i); }
 
   // lines
-  fl_color(0x00000000);
+  fl_color(BLACK);
   for (std::string line : circuit.ls(root/"lines"))
-  { int x0 = circuit[root/"lines"/line/0/"x"];
-    x0 -= (int)context[root/"draw pos"/"x"];
-    x0 *= (int)context[root/"grid size"];
+  { fl_line(x() + x_screen((int)circuit[root/"lines"/line/0/"x"]),
+            y() + y_screen((int)circuit[root/"lines"/line/0/"y"]),
+            x() + x_screen((int)circuit[root/"lines"/line/1/"x"]),
+            y() + y_screen((int)circuit[root/"lines"/line/1/"y"])); }
 
-    int y0 = circuit[root/"lines"/line/0/"y"];
-    y0 -= (int)context[root/"draw pos"/"y"];
-    y0 *= (int)context[root/"grid size"];
-    
-    int x1 = circuit[root/"lines"/line/1/"x"];
-    x1 -= (int)context[root/"draw pos"/"x"];
-    x1 *= (int)context[root/"grid size"];
-    
-    int y1 = circuit[root/"lines"/line/1/"y"];
-    y1 -= (int)context[root/"draw pos"/"y"];
-    y1 *= (int)context[root/"grid size"];
-    
-    fl_line(x() + x0, y() + y0, x() + x1, y() + y1); }
+  // cursor
+  fl_line_style(FL_SOLID, 3);
+  fl_color(GREEN);
+  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"] - 1),
+          y() + y_screen((int)context[root/"cursor pos"/"y"]),
+          x() + x_screen((int)context[root/"cursor pos"/"x"] + 1),
+          y() + y_screen((int)context[root/"cursor pos"/"y"]));
+  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]),
+          y() + y_screen((int)context[root/"cursor pos"/"y"] - 1),
+          x() + x_screen((int)context[root/"cursor pos"/"x"]),
+          y() + y_screen((int)context[root/"cursor pos"/"y"] + 1));
 
   fl_pop_clip(); }
 
@@ -118,8 +152,8 @@ editor::window::window()
   resizable(&wsp);
   
   menu_bar.box(FL_BORDER_BOX);
-  menu_bar.color(Fl_Color(0xFFFFFF00));
-  menu_bar.color2(Fl_Color(0x0000B400));
+  menu_bar.color(Fl_Color(WHITE));
+  menu_bar.color2(Fl_Color(BLUE));
 
   menu_bar.add("File/Open", 0, control_cb, (void*)"open");
   menu_bar.add("File/Save", 0, control_cb, (void*)"save");
@@ -133,7 +167,7 @@ editor::window::window()
 #endif
 
   side_screen.box(FL_BORDER_BOX);
-  side_screen.color(Fl_Color(0xFFFFFF00));
+  side_screen.color(Fl_Color(WHITE));
 
   Fl_Button* btn = nullptr;
   btn = new Fl_Button(side_screen.x() + 5,
@@ -144,8 +178,8 @@ editor::window::window()
   btn->box(FL_BORDER_BOX);
   btn->labelsize(12);
   btn->clear_visible_focus();
-  btn->color(Fl_Color(0xFFFFFF00));
-  btn->color2(Fl_Color(0x0000B400));
+  btn->color(Fl_Color(WHITE));
+  btn->color2(Fl_Color(BLUE));
   btn->callback(control_cb, (void*)"add wire");
   side_screen.add(btn);
 
@@ -160,6 +194,8 @@ editor::window::window()
 
   context[root/"draw pos"/"x"] = 0;
   context[root/"draw pos"/"y"] = 0;
+  context[root/"cursor pos"/"x"] = 0;
+  context[root/"cursor pos"/"y"] = 0;
   context[root/"grid size"] = 20;
 
   show(); }
