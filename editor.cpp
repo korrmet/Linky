@@ -3,6 +3,7 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Menu_Item.H>
 #include <FL/Fl_Button.H>
+#include <string>
 #include "editor.hpp"
 #include "app.hpp"
 
@@ -16,6 +17,15 @@
 
 static editor::window* single_window = nullptr;
 static Fl_Button* wire_button = nullptr;
+static Fl_Button* input_button = nullptr;
+static Fl_Button* output_button = nullptr;
+
+// TODO: add simple units
+//       - const
+//       - delay
+//       - sum / prod (threestate)
+
+// TODO: add wires to network conversion
 
 editor::workspace::workspace(int x, int y, int w, int h)
 : Fl_Widget(x, y, w, h)
@@ -47,30 +57,52 @@ int editor::workspace::handle(int event)
 
   if (event == FL_KEYDOWN)
   { if (Fl::event_key() == 'w') { bus(IM("add wire")); }
+    else if (Fl::event_key() == 'i') { bus(IM("add input")); }
+    else if (Fl::event_key() == 'o') { bus(IM("add output")); }
     else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
     else if (Fl::event_key() == FL_Delete) { bus(IM("delete")); }
     else if (Fl::event_key() == FL_BackSpace) { bus(IM("delete")); }
+    // That's pretty convenient, especially if you're aware about VIM
+    else if (Fl::event_key() == 'x') { bus(IM("delete")); }
+    // Keyboard cursor control
+    else if (Fl::event_key() == ' ') { bus(IM("space down")); }
+    else if (Fl::event_key() == FL_Up) { bus(IM("up")); }
+    else if (Fl::event_key() == FL_Down) { bus(IM("down")); }
+    else if (Fl::event_key() == FL_Left) { bus(IM("left")); }
+    else if (Fl::event_key() == FL_Right) { bus(IM("right")); }
+    else if (Fl::event_key() == FL_Control_L) { bus(IM("control down")); }
+    else if (Fl::event_key() == FL_Shift_L) { bus(IM("shift down")); }
     return 1; }
 
-  // BUG: when redraw here or in the window handler, points erases and
-  //      immediately set up again.
-  // if (event == FL_KEYUP)
-  // { if (Fl::event_key() == FL_Delete) { redraw(); }
-  //   else if (Fl::event_key() == FL_BackSpace) { redraw(); }
-  //   return 1; }
+
+  if (event == FL_KEYUP)
+  { if (Fl::event_key() == ' ') { bus(IM("space up")); }
+    else if (Fl::event_key() == FL_Control_L) { bus(IM("control up")); }
+    else if (Fl::event_key() == FL_Shift_L) { bus(IM("shift up")); }
+    return 1; }
 
   if (event == FL_ENTER) { single_window->cursor(FL_CURSOR_NONE); return 1; }
   if (event == FL_LEAVE) { single_window->cursor(FL_CURSOR_DEFAULT); return 1; }
 
   if (event == FL_DRAG)
-  { if (context[root/"input mode"] == "normal" &&
+  { if (context[root/"edit mode"] == "normal" &&
         !!context(root/"highlight"))
     { if (context[root/"highlight"/"type"] == "wire point")
       { std::string wire = context[root/"highlight"/"wire"];
         std::string point = context[root/"highlight"/"point"];
         circuit[root/"wires"/wire/point/"x"] = x_real(Fl::event_x() - x());
         circuit[root/"wires"/wire/point/"y"] = y_real(Fl::event_y() - y());
-        redraw(); } }
+        redraw(); } 
+
+      else if (context[root/"highlight"/"type"] == "input")
+      { std::string input = context[root/"highlight"/"input"];
+        circuit[root/"inputs"/input/"x"] = x_real(Fl::event_x() - x());
+        circuit[root/"inputs"/input/"y"] = y_real(Fl::event_y() - y()); }
+
+      else if (context[root/"highlight"/"type"] == "output")
+      { std::string output = context[root/"highlight"/"output"];
+        circuit[root/"outputs"/output/"x"] = x_real(Fl::event_x() - x());
+        circuit[root/"outputs"/output/"y"] = y_real(Fl::event_y() - y()); } }
     return 1; }
 
   if (event == FL_MOVE)
@@ -82,41 +114,18 @@ int editor::workspace::handle(int event)
     if (cx != rx || cy != ry)
     { context[root/"cursor pos"/"x"] = rx;
       context[root/"cursor pos"/"y"] = ry;
-      redraw(); }
-
-    bool highlight = false;
-    for (std::string wire : circuit.ls(root/"wires"))
-    { if (rx == (int)circuit[root/"wires"/wire/0/"x"] &&
-          ry == (int)circuit[root/"wires"/wire/0/"y"])
-      { context[root/"highlight"/"type"] = "wire point";
-        context[root/"highlight"/"wire"] = wire;
-        context[root/"highlight"/"point"] = "0";
-        highlight = true; break; }
-
-      else if (rx == (int)circuit[root/"wires"/wire/1/"x"] &&
-               ry == (int)circuit[root/"wires"/wire/1/"y"])
-      { context[root/"highlight"/"type"] = "wire point";
-        context[root/"highlight"/"wire"] = wire;
-        context[root/"highlight"/"point"] = "1";
-        highlight = true; break; } }
-
-    if (!highlight) { context.del(root/"highlight"); } else { redraw(); }
+      bus(IM("cursor update")); }
 
     return 1; }
   
   if (event == FL_PUSH)
-  { if (context[root/"input mode"] == "wire input")
-    { int s = context.ls(root/"current wire").size();
-      context[root/"current wire"/s/"x"] = context[root/"cursor pos"/"x"];
-      context[root/"current wire"/s/"y"] = context[root/"cursor pos"/"y"];
+  { if (context[root/"edit mode"] == "place wire")
+    { bus(IM("place wire press")); }
+    else if (context[root/"edit mode"] == "place input")
+    { bus(IM("place input press")); }
+    else if (context[root/"edit mode"] == "place output")
+    { bus(IM("place output press")); }
 
-      if (s == 1)
-      { circuit[root/"wires"];
-        int idx = circuit.ls(root/"wires").size();
-        circuit[root/"wires"/idx];
-        context.cp(root/"current wire", root/"wires"/idx, &circuit);
-        context.mv(root/"current wire"/1, root/"current wire"/0);
-        redraw(); } }
     return 1; }
   
   if (event == FL_RELEASE) { return 1; }
@@ -156,6 +165,41 @@ void editor::workspace::draw()
   for (unsigned int i = 0; i < h(); i += (int)context[root/"grid size"])
   { fl_line(x(), y() + i, x() + w(), y() + i); }
 
+  // inputs
+  fl_color(BLACK);
+  for (std::string input : circuit.ls(root/"inputs"))
+  { int _x[6] = { 0 }; int _y[6] = { 0 };
+
+    _x[0] = circuit[root/"inputs"/input/"x"];
+    _y[0] = circuit[root/"inputs"/input/"y"];
+
+    _x[1] = _x[0] + 4; _y[1] = _y[0];
+    _x[2] = _x[0] + 5; _y[2] = _y[0] + 1;
+    _x[3] = _x[0] + 4; _y[3] = _y[0] + 2;
+    _x[4] = _x[0];     _y[4] = _y[0] + 2;
+    _x[5] = _x[0];     _y[5] = _y[0];
+
+    for (unsigned int i = 0; i < 5; i++)
+    { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
+              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); } }
+
+  // outputs
+  for (std::string output : circuit.ls(root/"outputs"))
+  { int _x[6] = { 0 }; int _y[6] = { 0 };
+
+    _x[0] = circuit[root/"outputs"/output/"x"];
+    _y[0] = circuit[root/"outputs"/output/"y"];
+
+    _x[1] = _x[0] + 5; _y[1] = _y[0];
+    _x[2] = _x[0] + 5; _y[2] = _y[0] + 2;
+    _x[3] = _x[0];     _y[3] = _y[0] + 2;
+    _x[4] = _x[0] + 1; _y[4] = _y[0] + 1;
+    _x[5] = _x[0];     _y[5] = _y[0];
+
+    for (unsigned int i = 0; i < 5; i++)
+    { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
+              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); } }
+
   // wires 
   fl_color(BLACK);
   for (std::string wire : circuit.ls(root/"wires"))
@@ -183,12 +227,9 @@ void editor::workspace::draw()
 
   for (point_data& point : points)
   { if (point.count > 1)
-    { // fl_circle(x() + x_screen(point.x), y() + y_screen(point.y), CSIZE);
-      fl_pie(x() + x_screen(point.x) - CSIZE,
+    { fl_pie(x() + x_screen(point.x) - CSIZE,
              y() + y_screen(point.y) - CSIZE,
-             CSIZE*2, CSIZE*2, 0.0, 360.0);
-    }
-  }
+             CSIZE*2, CSIZE*2, 0.0, 360.0); } }
 
   // cursor
   fl_line_style(FL_SOLID, 3); fl_color(GREEN);
@@ -211,7 +252,18 @@ void editor::workspace::draw()
       std::string point = context[root/"highlight"/"point"];
       int sx = x_screen((int)circuit[root/"wires"/wire/point/"x"]);
       int sy = y_screen((int)circuit[root/"wires"/wire/point/"y"]);
-      
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); }
+
+    else if (context[root/"highlight"/"type"] == "input")
+    { std::string input = context[root/"highlight"/"input"];
+      int sx = x_screen((int)circuit[root/"inputs"/input/"x"]);
+      int sy = y_screen((int)circuit[root/"inputs"/input/"y"]);
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); }
+
+    else if (context[root/"highlight"/"type"] == "output")
+    { std::string output = context[root/"highlight"/"output"];
+      int sx = x_screen((int)circuit[root/"outputs"/output/"x"]);
+      int sy = y_screen((int)circuit[root/"outputs"/output/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); } }
 
   fl_line_style(0); fl_color(0); fl_pop_clip(); }
@@ -254,7 +306,7 @@ editor::window::window()
                               side_screen.y() + 5,
                               side_screen.w() - 10,
                               20,
-                              "Wire");
+                              "Wire [W]");
   wire_button->box(FL_BORDER_BOX);
   wire_button->labelsize(12);
   wire_button->clear_visible_focus();
@@ -262,6 +314,32 @@ editor::window::window()
   wire_button->color2(Fl_Color(BLUE));
   wire_button->callback(control_cb, (void*)"add wire");
   side_screen.add(wire_button);
+
+  input_button = new Fl_Button(wire_button->x(),
+                               wire_button->y() + wire_button->h() + 5,
+                               (wire_button->w() - 5) / 2,
+                               wire_button->h(),
+                               "Input [I]");
+  input_button->box(FL_BORDER_BOX);
+  input_button->labelsize(12);
+  input_button->clear_visible_focus();
+  input_button->color(Fl_Color(WHITE));
+  input_button->color2(Fl_Color(BLUE));
+  input_button->callback(control_cb, (void*)"add input");
+  side_screen.add(input_button);
+
+  output_button = new Fl_Button(input_button->x() + input_button->w() + 5,
+                                input_button->y(),
+                                input_button->w(),
+                                input_button->h(),
+                                "Output [O]");
+  output_button->box(FL_BORDER_BOX);
+  output_button->labelsize(12);
+  output_button->clear_visible_focus();
+  output_button->color(Fl_Color(WHITE));
+  output_button->color2(Fl_Color(BLUE));
+  output_button->callback(control_cb, (void*)"add output");
+  side_screen.add(output_button);
 
   // dummy group to correct resizing
   Fl_Group* dummy = new Fl_Group(side_screen.x(),
@@ -311,28 +389,227 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "help")
   { fl_message("Linky\nv0\nsimple digital circuit simulator"); }
 
-  else if (cmd == "add wire") { bus(IM("add wire")); }
-}
+  else { bus(IM(cmd)); } }
 
 void editor::window::handler(void* ctx, IM mess)
 { editor::window* that = (editor::window*)ctx;
 
   if (mess == "add wire")
-  { wire_button->color(GREEN); wire_button->redraw();
+  { bus(IM("end input"));
+    wire_button->color(GREEN); wire_button->redraw();
     context.del(root/"current wire");
-    context[root/"input mode"] = "wire input"; }
+    context[root/"edit mode"] = "place wire"; }
+
+  else if (mess == "add input")
+  { bus(IM("end input"));
+    input_button->color(GREEN); input_button->redraw();
+    context[root/"edit mode"] = "place input"; }
+
+  else if (mess == "add output")
+  { bus(IM("end input"));
+    output_button->color(GREEN); output_button->redraw();
+    context[root/"edit mode"] = "place output"; }
 
   else if (mess == "end input")
   { wire_button->color(WHITE); wire_button->redraw();
+    input_button->color(WHITE); input_button->redraw();
+    output_button->color(WHITE); output_button->redraw();
+
     // finalize previous operations if needed
-    if (context[root/"input mode"] == "wire input")
+    if (context[root/"edit mode"] == "place wire")
     { context.del(root/"current wire"); }
 
-    context[root/"input mode"] = "normal"; }
+    context[root/"edit mode"] = "normal"; }
 
   else if (mess == "delete")
   { if (!context(root/"highlight")) { return; }
 
     if (context[root/"highlight"/"type"] == "wire point")
     { std::string wire = context[root/"highlight"/"wire"];
-      circuit.del(root/"wires"/wire); } } }
+      circuit.del(root/"wires"/wire);
+      context.del(root/"highlight"); that->redraw(); }
+
+    else if (context[root/"highlight"/"type"] == "input")
+    { std::string input = context[root/"highlight"/"input"];
+      circuit.del(root/"inputs"/input);
+      context.del(root/"highlight"); that->redraw(); }
+
+    else if (context[root/"highlight"/"type"] == "output")
+    { std::string output = context[root/"highlight"/"output"];
+      circuit.del(root/"outputs"/output);
+      context.del(root/"highlight"); that->redraw(); } }
+
+  else if (mess == "space down")
+  { context[root/"space"] = (int)1;
+    if (context[root/"edit mode"] == "place wire")
+    { bus(IM("place wire press")); }
+    else if (context[root/"edit mode"] == "place input")
+    { bus(IM("place input press")); }
+    else if (context[root/"edit mode"] == "place output")
+    { bus(IM("place output press")); } }
+
+  else if (mess == "space up")     { context[root/"space"] = (int)0; }
+  else if (mess == "control down") { context[root/"control"] = (int)1; }
+  else if (mess == "control up")   { context[root/"control"] = (int)0; }
+  else if (mess == "shift down")   { context[root/"shift"] = (int)1; }
+  else if (mess == "shift up")     { context[root/"shift"] = (int)0; }
+
+  else if (mess == "up")
+  { if ((int)context(root/"shift"))
+    { context[root/"draw pos"/"y"] -= 1; that->redraw(); }
+    else if ((int)context(root/"control"))
+    { context[root/"grid size"] += 5;
+      if ((int)context[root/"grid size"] > 100)
+      { context[root/"grid size"] = 100; }
+      that->redraw(); }
+    else if ((int)context(root/"space"))
+    { if (context[root/"edit mode"] == "normal" &&
+          !!context(root/"highlight"))
+      { if (context[root/"highlight"/"type"] == "wire point")
+        { std::string wire = context[root/"highlight"/"wire"];
+          std::string point = context[root/"highlight"/"point"];
+          circuit[root/"wires"/wire/point/"y"] -= 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "input")
+        { std::string input = context[root/"highlight"/"input"];
+          circuit[root/"inputs"/input/"y"] -= 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "output")
+        { std::string output = context[root/"highlight"/"output"];
+          circuit[root/"outputs"/output/"y"] -= 1; that->redraw(); } } }
+    else { context[root/"cursor pos"/"y"] -= 1; bus(IM("cursor update")); } }
+
+  else if (mess == "down")
+  { if ((int)context(root/"shift"))
+    { context[root/"draw pos"/"y"] += 1; that->redraw(); }
+    else if ((int)context(root/"control"))
+    { context[root/"grid size"] -= 5;
+      if ((int)context[root/"grid size"] < 5)
+      { context[root/"grid size"] = 5; }
+      that->redraw(); }
+    else if ((int)context(root/"space"))
+    { if (context[root/"edit mode"] == "normal" &&
+          !!context(root/"highlight"))
+      { if (context[root/"highlight"/"type"] == "wire point")
+        { std::string wire = context[root/"highlight"/"wire"];
+          std::string point = context[root/"highlight"/"point"];
+          circuit[root/"wires"/wire/point/"y"] += 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "input")
+        { std::string input = context[root/"highlight"/"input"];
+          circuit[root/"inputs"/input/"y"] += 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "output")
+        { std::string output = context[root/"highlight"/"output"];
+          circuit[root/"outputs"/output/"y"] += 1; that->redraw(); } } }
+    else { context[root/"cursor pos"/"y"] += 1; bus(IM("cursor update")); } }
+
+  else if (mess == "left")
+  { if ((int)context(root/"shift"))
+    { context[root/"draw pos"/"x"] -= 1; that->redraw(); }
+    else if ((int)context(root/"space"))
+    { if (context[root/"edit mode"] == "normal" &&
+          !!context(root/"highlight"))
+      { if (context[root/"highlight"/"type"] == "wire point")
+        { std::string wire = context[root/"highlight"/"wire"];
+          std::string point = context[root/"highlight"/"point"];
+          circuit[root/"wires"/wire/point/"x"] -= 1; that->redraw(); } 
+      
+        if (context[root/"highlight"/"type"] == "input")
+        { std::string input = context[root/"highlight"/"input"];
+          circuit[root/"inputs"/input/"x"] -= 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "output")
+        { std::string output = context[root/"highlight"/"output"];
+          circuit[root/"outputs"/output/"x"] -= 1; that->redraw(); } } }
+    else { context[root/"cursor pos"/"x"] -= 1; bus(IM("cursor update")); } }
+
+  else if (mess == "right")
+  { if ((int)context(root/"shift"))
+    { context[root/"draw pos"/"x"] += 1; that->redraw(); }
+    else if ((int)context(root/"space"))
+    { if (context[root/"edit mode"] == "normal" &&
+          !!context(root/"highlight"))
+      { if (context[root/"highlight"/"type"] == "wire point")
+        { std::string wire = context[root/"highlight"/"wire"];
+          std::string point = context[root/"highlight"/"point"];
+          circuit[root/"wires"/wire/point/"x"] += 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "input")
+        { std::string input = context[root/"highlight"/"input"];
+          circuit[root/"inputs"/input/"x"] += 1; that->redraw(); }
+      
+        if (context[root/"highlight"/"type"] == "output")
+        { std::string output = context[root/"highlight"/"output"];
+          circuit[root/"outputs"/output/"x"] += 1; that->redraw(); } } }
+    else { context[root/"cursor pos"/"x"] += 1; bus(IM("cursor update")); } }
+
+  else if (mess == "cursor update")
+  { bool highlight = false;
+    int cx = context[root/"cursor pos"/"x"];
+    int cy = context[root/"cursor pos"/"y"];
+
+    if (!highlight)
+    { for (std::string wire : circuit.ls(root/"wires"))
+      { if (cx == (int)circuit[root/"wires"/wire/0/"x"] &&
+            cy == (int)circuit[root/"wires"/wire/0/"y"])
+        { context[root/"highlight"/"type"] = "wire point";
+          context[root/"highlight"/"wire"] = wire;
+          context[root/"highlight"/"point"] = "0";
+          highlight = true; break; }
+
+        else if (cx == (int)circuit[root/"wires"/wire/1/"x"] &&
+                 cy == (int)circuit[root/"wires"/wire/1/"y"])
+        { context[root/"highlight"/"type"] = "wire point";
+          context[root/"highlight"/"wire"] = wire;
+          context[root/"highlight"/"point"] = "1";
+          highlight = true; break; } } }
+
+    if (!highlight)
+    { for (std::string input : circuit.ls(root/"inputs"))
+      { if (cx == (int)circuit[root/"inputs"/input/"x"] &&
+            cy == (int)circuit[root/"inputs"/input/"y"])
+        { context[root/"highlight"/"type"] = "input";
+          context[root/"highlight"/"input"] = input;
+          highlight = true; break; } } }
+
+    if (!highlight)
+    { for (std::string output : circuit.ls(root/"outputs"))
+      { if (cx == (int)circuit[root/"outputs"/output/"x"] &&
+            cy == (int)circuit[root/"outputs"/output/"y"])
+        { context[root/"highlight"/"type"] = "output";
+          context[root/"highlight"/"output"] = output;
+          highlight = true; break; } } }
+
+    if (!highlight) { context.del(root/"highlight"); } that->redraw(); }
+
+  else if (mess == "place wire press")
+  { int s = context.ls(root/"current wire").size();
+    context[root/"current wire"/s/"x"] = context[root/"cursor pos"/"x"];
+    context[root/"current wire"/s/"y"] = context[root/"cursor pos"/"y"];
+
+    if (s == 1)
+    { circuit[root/"wires"];
+      std::list<std::string> wires = circuit.ls(root/"wires");
+      int idx = wires.size() ? std::stoi(wires.back()) + 1 : 0;
+      circuit[root/"wires"/idx];
+      context.cp(root/"current wire", root/"wires"/idx, &circuit);
+      context.mv(root/"current wire"/1, root/"current wire"/0);
+      that->redraw(); } }
+
+  else if (mess == "place input press")
+  { circuit[root/"inputs"];
+    std::list<std::string> inputs = circuit.ls(root/"inputs");
+    int idx = inputs.size() ? std::stoi(inputs.back()) + 1 : 0;
+    circuit[root/"inputs"/idx/"x"] = context[root/"cursor pos"/"x"];
+    circuit[root/"inputs"/idx/"y"] = context[root/"cursor pos"/"y"];
+    that->redraw(); }
+
+  else if (mess == "place output press")
+  { circuit[root/"outputs"];
+    std::list<std::string> outputs = circuit.ls(root/"outputs");
+    int idx = outputs.size() ? std::stoi(outputs.back()) + 1 : 0;
+    circuit[root/"outputs"/idx/"x"] = context[root/"cursor pos"/"x"];
+    circuit[root/"outputs"/idx/"y"] = context[root/"cursor pos"/"y"];
+    that->redraw(); }
+}
