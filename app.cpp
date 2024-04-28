@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
 void app_handler(void* ctx, IM mess)
 { if (mess == "file open")
-  { std::ifstream file(mess["name"]);
+  { std::ifstream file(mess["path"]);
     if (!file.is_open())
     { PRINT("Unable to open %s, skipping ...\n",
             ((std::string)mess["name"]).c_str());

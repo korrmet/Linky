@@ -16,6 +16,7 @@
 #define CSIZE 5
 
 static editor::window* single_window = nullptr;
+static Fl_Button* edit_button = nullptr;
 static Fl_Button* wire_button = nullptr;
 static Fl_Button* input_button = nullptr;
 static Fl_Button* output_button = nullptr;
@@ -56,7 +57,8 @@ int editor::workspace::handle(int event)
 { if (event == FL_FOCUS) { return 1; }
 
   if (event == FL_KEYDOWN)
-  { if (Fl::event_key() == 'w') { bus(IM("add wire")); }
+  { if      (Fl::event_key() == 'e') { bus(IM("edit items")); }
+    else if (Fl::event_key() == 'w') { bus(IM("add wire")); }
     else if (Fl::event_key() == 'i') { bus(IM("add input")); }
     else if (Fl::event_key() == 'o') { bus(IM("add output")); }
     else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
@@ -118,15 +120,7 @@ int editor::workspace::handle(int event)
 
     return 1; }
   
-  if (event == FL_PUSH)
-  { if (context[root/"edit mode"] == "place wire")
-    { bus(IM("place wire press")); }
-    else if (context[root/"edit mode"] == "place input")
-    { bus(IM("place input press")); }
-    else if (context[root/"edit mode"] == "place output")
-    { bus(IM("place output press")); }
-
-    return 1; }
+  if (event == FL_PUSH) { bus(IM("click")); return 1; }
   
   if (event == FL_RELEASE) { return 1; }
 
@@ -302,11 +296,22 @@ editor::window::window()
   side_screen.box(FL_BORDER_BOX);
   side_screen.color(Fl_Color(WHITE));
 
-  wire_button = new Fl_Button(side_screen.x() + 5,
+  edit_button = new Fl_Button(side_screen.x() + 5,
                               side_screen.y() + 5,
-                              side_screen.w() - 10,
-                              20,
-                              "Wire [W]");
+                              side_screen.w() / 2 - 10,
+                              20, "Edit [E]");
+  edit_button->box(FL_BORDER_BOX);
+  edit_button->labelsize(12);
+  edit_button->clear_visible_focus();
+  edit_button->color(Fl_Color(WHITE));
+  edit_button->color2(Fl_Color(BLUE));
+  edit_button->callback(control_cb, (void*)"edit items");
+  side_screen.add(edit_button);
+
+  wire_button = new Fl_Button(edit_button->x() + edit_button->w() + 5,
+                              edit_button->y(),
+                              edit_button->w(),
+                              20, "Wire [W]");
   wire_button->box(FL_BORDER_BOX);
   wire_button->labelsize(12);
   wire_button->clear_visible_focus();
@@ -315,11 +320,10 @@ editor::window::window()
   wire_button->callback(control_cb, (void*)"add wire");
   side_screen.add(wire_button);
 
-  input_button = new Fl_Button(wire_button->x(),
-                               wire_button->y() + wire_button->h() + 5,
-                               (wire_button->w() - 5) / 2,
-                               wire_button->h(),
-                               "Input [I]");
+  input_button = new Fl_Button(edit_button->x(),
+                               edit_button->y() + edit_button->h() + 5,
+                               edit_button->w(),
+                               20, "Input [I]");
   input_button->box(FL_BORDER_BOX);
   input_button->labelsize(12);
   input_button->clear_visible_focus();
@@ -331,8 +335,7 @@ editor::window::window()
   output_button = new Fl_Button(input_button->x() + input_button->w() + 5,
                                 input_button->y(),
                                 input_button->w(),
-                                input_button->h(),
-                                "Output [O]");
+                                20, "Output [O]");
   output_button->box(FL_BORDER_BOX);
   output_button->labelsize(12);
   output_button->clear_visible_focus();
@@ -410,8 +413,14 @@ void editor::window::handler(void* ctx, IM mess)
     output_button->color(GREEN); output_button->redraw();
     context[root/"edit mode"] = "place output"; }
 
+  else if (mess == "edit items")
+  { bus(IM("end input"));
+    edit_button->color(GREEN); edit_button->redraw();
+    context[root/"edit mode"] = "edit properties"; }
+
   else if (mess == "end input")
-  { wire_button->color(WHITE); wire_button->redraw();
+  { edit_button->color(WHITE); edit_button->redraw();
+    wire_button->color(WHITE); wire_button->redraw();
     input_button->color(WHITE); input_button->redraw();
     output_button->color(WHITE); output_button->redraw();
 
@@ -437,16 +446,37 @@ void editor::window::handler(void* ctx, IM mess)
     else if (context[root/"highlight"/"type"] == "output")
     { std::string output = context[root/"highlight"/"output"];
       circuit.del(root/"outputs"/output);
-      context.del(root/"highlight"); that->redraw(); } }
+      context.del(root/"highlight"); that->redraw(); }
+  
+    bus(IM("cursor update")); }
 
-  else if (mess == "space down")
-  { context[root/"space"] = (int)1;
-    if (context[root/"edit mode"] == "place wire")
+  else if (mess == "edit")
+  { PRINT("Clicked edit. It should invoke a modal dialog for "
+          "every kind of editable item.\n");
+    if (!context(root/"highlight")) { return; }
+
+    if (context[root/"highlight"/"type"] == "wire point")
+    { PRINT("Edit wire: color\n"); }
+
+    else if (context[root/"highlight"/"type"] == "input")
+    { PRINT("Edit input: name, color\n"); }
+
+    else if (context[root/"highlight"/"type"] == "output")
+    { PRINT("Edit output: name, color\n"); }
+  }
+
+  else if (mess == "space down") { context[root/"space"] = (int)1;
+                                   bus(IM("click")); }
+
+  else if (mess == "click")
+  { if (context[root/"edit mode"] == "place wire")
     { bus(IM("place wire press")); }
     else if (context[root/"edit mode"] == "place input")
     { bus(IM("place input press")); }
     else if (context[root/"edit mode"] == "place output")
-    { bus(IM("place output press")); } }
+    { bus(IM("place output press")); }
+    else if (context[root/"edit mode"] == "edit properties")
+    { bus(IM("edit")); } }
 
   else if (mess == "space up")     { context[root/"space"] = (int)0; }
   else if (mess == "control down") { context[root/"control"] = (int)1; }
