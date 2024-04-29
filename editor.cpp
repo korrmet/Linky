@@ -3,6 +3,8 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Menu_Item.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Box.H>
 #include <string>
 #include "editor.hpp"
 #include "app.hpp"
@@ -14,6 +16,54 @@
 #define WHITE 0xFFFFFF00
 
 #define CSIZE 5
+
+class inputEditWindow : public Fl_Window
+{ public:
+  inputEditWindow(std::string name)
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Name of the input"),
+    name_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
+    input_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    name_input.value(((std::string)
+                      circuit[root/"inputs"/name/"name"]).c_str());
+    set_modal(); show(); }
+  
+  static void save_cb(Fl_Widget* w, void* arg)
+  { inputEditWindow* that = (inputEditWindow*)arg;
+    circuit[root/"inputs"/that->input_name/"name"] = that->name_input.value();
+    bus(IM("screen update"));
+    that->hide(); }
+  
+  Fl_Input    name_input;
+  Fl_Box      label;
+  Fl_Button   save_btn;
+  std::string input_name; };
+
+class outputEditWindow : public Fl_Window
+{ public:
+  outputEditWindow(std::string name)
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Name of the output"),
+    name_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
+    output_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    name_input.value(((std::string)
+                      circuit[root/"outputs"/name/"name"]).c_str());
+    set_modal(); show(); }
+  
+  static void save_cb(Fl_Widget* w, void* arg)
+  { outputEditWindow* that = (outputEditWindow*)arg;
+    circuit[root/"outputs"/that->output_name/"name"] = that->name_input.value();
+    bus(IM("screen update"));
+    that->hide(); }
+  
+  Fl_Input    name_input;
+  Fl_Box      label;
+  Fl_Button   save_btn;
+  std::string output_name; };
 
 static editor::window* single_window = nullptr;
 static Fl_Button* edit_button = nullptr;
@@ -167,15 +217,25 @@ void editor::workspace::draw()
     _x[0] = circuit[root/"inputs"/input/"x"];
     _y[0] = circuit[root/"inputs"/input/"y"];
 
-    _x[1] = _x[0] + 4; _y[1] = _y[0];
-    _x[2] = _x[0] + 5; _y[2] = _y[0] + 1;
-    _x[3] = _x[0] + 4; _y[3] = _y[0] + 2;
-    _x[4] = _x[0];     _y[4] = _y[0] + 2;
-    _x[5] = _x[0];     _y[5] = _y[0];
+    fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+    int pixel_w = 
+      fl_width(((std::string)circuit[root/"inputs"/input/"name"]).c_str());
+    int name_w = pixel_w / (int)context[root/"grid size"] + 1;
+
+    _x[1] = _x[0] + name_w;     _y[1] = _y[0];
+    _x[2] = _x[0] + name_w + 1; _y[2] = _y[0] + 1;
+    _x[3] = _x[0] + name_w;     _y[3] = _y[0] + 2;
+    _x[4] = _x[0];              _y[4] = _y[0] + 2;
+    _x[5] = _x[0];              _y[5] = _y[0];
 
     for (unsigned int i = 0; i < 5; i++)
     { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
-              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); } }
+              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
+
+    fl_draw(((std::string)circuit[root/"inputs"/input/"name"]).c_str(),
+            x() + x_screen(_x[0]), y() + y_screen(_y[0]),
+            pixel_w, 2 * (int)context[root/"grid size"],
+            FL_ALIGN_LEFT); }
 
   // outputs
   for (std::string output : circuit.ls(root/"outputs"))
@@ -184,15 +244,25 @@ void editor::workspace::draw()
     _x[0] = circuit[root/"outputs"/output/"x"];
     _y[0] = circuit[root/"outputs"/output/"y"];
 
-    _x[1] = _x[0] + 5; _y[1] = _y[0];
-    _x[2] = _x[0] + 5; _y[2] = _y[0] + 2;
-    _x[3] = _x[0];     _y[3] = _y[0] + 2;
-    _x[4] = _x[0] + 1; _y[4] = _y[0] + 1;
-    _x[5] = _x[0];     _y[5] = _y[0];
+    fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+    int pixel_w =
+      fl_width(((std::string)circuit[root/"outputs"/output/"name"]).c_str());
+    int name_w = pixel_w / (int)context[root/"grid size"] + 1;
+
+    _x[1] = _x[0] + 1 + name_w; _y[1] = _y[0];
+    _x[2] = _x[0] + 1 + name_w; _y[2] = _y[0] + 2;
+    _x[3] = _x[0];              _y[3] = _y[0] + 2;
+    _x[4] = _x[0] + 1;          _y[4] = _y[0] + 1;
+    _x[5] = _x[0];              _y[5] = _y[0];
 
     for (unsigned int i = 0; i < 5; i++)
     { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
-              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); } }
+              x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
+              
+    fl_draw(((std::string)circuit[root/"outputs"/output/"name"]).c_str(),
+            x() + x_screen(_x[0] + 1), y() + y_screen(_y[0]),
+            pixel_w, 2 * (int)context[root/"grid size"],
+            FL_ALIGN_LEFT); }
 
   // wires 
   fl_color(BLACK);
@@ -451,19 +521,15 @@ void editor::window::handler(void* ctx, IM mess)
     bus(IM("cursor update")); }
 
   else if (mess == "edit")
-  { PRINT("Clicked edit. It should invoke a modal dialog for "
-          "every kind of editable item.\n");
-    if (!context(root/"highlight")) { return; }
-
-    if (context[root/"highlight"/"type"] == "wire point")
-    { PRINT("Edit wire: color\n"); }
+  { if (!context(root/"highlight")) { return; }
 
     else if (context[root/"highlight"/"type"] == "input")
-    { PRINT("Edit input: name, color\n"); }
+    { inputEditWindow w((std::string)context[root/"highlight"/"input"]);
+      while (w.shown()) { Fl::wait(); } }
 
     else if (context[root/"highlight"/"type"] == "output")
-    { PRINT("Edit output: name, color\n"); }
-  }
+    { outputEditWindow w((std::string)context[root/"highlight"/"output"]);
+      while (w.shown()) { Fl::wait(); } } }
 
   else if (mess == "space down") { context[root/"space"] = (int)1;
                                    bus(IM("click")); }
@@ -574,6 +640,8 @@ void editor::window::handler(void* ctx, IM mess)
           circuit[root/"outputs"/output/"x"] += 1; that->redraw(); } } }
     else { context[root/"cursor pos"/"x"] += 1; bus(IM("cursor update")); } }
 
+  else if (mess == "screen update") { that->redraw(); }
+
   else if (mess == "cursor update")
   { bool highlight = false;
     int cx = context[root/"cursor pos"/"x"];
@@ -633,6 +701,8 @@ void editor::window::handler(void* ctx, IM mess)
     int idx = inputs.size() ? std::stoi(inputs.back()) + 1 : 0;
     circuit[root/"inputs"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"inputs"/idx/"y"] = context[root/"cursor pos"/"y"];
+    circuit[root/"inputs"/idx/"name"] =
+      std::string("i:").append(std::to_string(idx));
     that->redraw(); }
 
   else if (mess == "place output press")
@@ -641,5 +711,7 @@ void editor::window::handler(void* ctx, IM mess)
     int idx = outputs.size() ? std::stoi(outputs.back()) + 1 : 0;
     circuit[root/"outputs"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"outputs"/idx/"y"] = context[root/"cursor pos"/"y"];
+    circuit[root/"outputs"/idx/"name"] =
+      std::string("o:").append(std::to_string(idx));
     that->redraw(); }
-}
+}  
