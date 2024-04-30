@@ -4,6 +4,7 @@
 #include <FL/Fl_Menu_Item.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Input.H>
+#include <FL/Fl_Value_Input.H>
 #include <FL/Fl_Box.H>
 #include <string>
 #include "editor.hpp"
@@ -11,7 +12,7 @@
 
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
-#define LBLUE 0xCCCCFF00
+#define LBLUE 0xEEEEFF00
 #define BLACK 0x00000000
 #define WHITE 0xFFFFFF00
 
@@ -33,8 +34,7 @@ class inputEditWindow : public Fl_Window
   static void save_cb(Fl_Widget* w, void* arg)
   { inputEditWindow* that = (inputEditWindow*)arg;
     circuit[root/"inputs"/that->input_name/"name"] = that->name_input.value();
-    bus(IM("screen update"));
-    that->hide(); }
+    bus(IM("screen update")); that->hide(); }
   
   Fl_Input    name_input;
   Fl_Box      label;
@@ -57,13 +57,162 @@ class outputEditWindow : public Fl_Window
   static void save_cb(Fl_Widget* w, void* arg)
   { outputEditWindow* that = (outputEditWindow*)arg;
     circuit[root/"outputs"/that->output_name/"name"] = that->name_input.value();
-    bus(IM("screen update"));
-    that->hide(); }
+    bus(IM("screen update")); that->hide(); }
   
   Fl_Input    name_input;
   Fl_Box      label;
   Fl_Button   save_btn;
   std::string output_name; };
+
+class constEditWindow : public Fl_Window
+{ public:
+  constEditWindow(std::string name)
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Value of the constant"),
+    value_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
+    unit_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    value_input.value((float)circuit[root/"units"/name/"value"]);
+    set_modal(); show(); }
+
+  static void save_cb(Fl_Widget* w, void* arg)
+  { constEditWindow* that = (constEditWindow*)arg;
+    circuit[root/"units"/that->unit_name/"value"]
+      = (float)that->value_input.value();
+    bus(IM("screen update")); that->hide(); }
+
+  Fl_Value_Input value_input;
+  Fl_Box         label;
+  Fl_Button      save_btn;
+  std::string    unit_name; };
+
+class delayEditWindow : public Fl_Window
+{ public:
+  delayEditWindow(std::string name)
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Value of the delay"),
+    value_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
+    unit_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    value_input.step(1);
+    value_input.value((int)circuit[root/"units"/name/"value"]);
+    set_modal(); show(); }
+  
+  static void save_cb(Fl_Widget* w, void* arg)
+  { delayEditWindow* that = (delayEditWindow*)arg;
+    circuit[root/"units"/that->unit_name/"value"]
+      = (int)that->value_input.value();
+    bus(IM("screen update")); that->hide(); }
+
+  Fl_Value_Input value_input;
+  Fl_Box         label;
+  Fl_Button      save_btn;
+  std::string    unit_name; };
+
+class functionEditWindow : public Fl_Window
+{ public:
+  functionEditWindow(std::string name)
+  : Fl_Window(300, 165),
+    function_name_label(5, 5, 290, 20, "Name of the function"),
+    function_name_input(5, 25, 290, 20),
+    numerator_label(5, 50, 290, 20, "Numerator coeffs separated by \";\""),
+    numerator_input(5, 70, 290, 20),
+    denominator_label(5, 95, 290, 20, "Denominator coeffs separated by \";\""),
+    denominator_input(5, 115, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 140, 60, 20, "Save"),
+    unit_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    function_name_input.value(((std::string)
+                               circuit[root/"units"/name/"function name"]
+                              ).c_str());
+    numerator_input.value(((std::string)
+                           circuit[root/"units"/name/"numerator poly"]
+                          ).c_str());
+    denominator_input.value(((std::string)
+                             circuit[root/"units"/name/"denominator poly"]
+                            ).c_str());
+    set_modal(); show(); }
+
+  static void save_cb(Fl_Widget* w, void* arg)
+  { functionEditWindow* that = (functionEditWindow*)arg;
+    circuit[root/"units"/that->unit_name/"function name"]
+      = that->function_name_input.value();
+    circuit[root/"units"/that->unit_name/"numerator poly"]
+      = that->numerator_input.value();
+    circuit[root/"units"/that->unit_name/"denominator poly"]
+      = that->denominator_input.value();
+    bus(IM("screen update")); that->hide(); }
+
+  Fl_Box      function_name_label;
+  Fl_Input    function_name_input;
+  Fl_Box      numerator_label;
+  Fl_Input    numerator_input;
+  Fl_Box      denominator_label;
+  Fl_Input    denominator_input;
+  Fl_Button   save_btn;
+  std::string unit_name; };
+
+class codeEditWindow : public Fl_Window
+{ public:
+  codeEditWindow(std::string name)
+  : Fl_Window(300, 255),
+    file_name_label(5, 5, 290, 20, "File name (in current circuit directory)"),
+    file_name_input(5, 25, 290, 20),
+    function_name_label(5, 50, 290, 20, "Name of the function"),
+    function_name_input(5, 70, 290, 20),
+    inputs_list_label(5, 95, 290, 20, "List of the input names separated by \";\""),
+    inputs_list_input(5, 115, 290, 20),
+    outputs_list_label(5, 140, 290, 20, "List of the output names separated by \";\""),
+    outputs_list_input(5, 160, 290, 20),
+    context_size_label(5, 185, 290, 20, "Size of the context of function"),
+    context_size_input(5, 205, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 230, 60, 20, "Save"),
+    unit_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    file_name_input.value(((std::string)
+                           circuit[root/"units"/name/"source file"]
+                          ).c_str());
+    function_name_input.value(((std::string)
+                               circuit[root/"units"/name/"function name"]
+                              ).c_str());
+    inputs_list_input.value(((std::string)
+                             circuit[root/"units"/name/"inputs names"]
+                            ).c_str());
+    outputs_list_input.value(((std::string)
+                              circuit[root/"units"/name/"outputs names"]
+                             ).c_str());
+    context_size_input.step(1);
+    context_size_input.value((int)circuit[root/"units"/name/"context size"]);
+    set_modal(); show(); }
+
+  static void save_cb(Fl_Widget* w, void* arg)
+  { codeEditWindow* that = (codeEditWindow*)arg;
+    circuit[root/"units"/that->unit_name/"source file"]
+      = that->file_name_input.value();
+    circuit[root/"units"/that->unit_name/"function name"]
+      = that->function_name_input.value();
+    circuit[root/"units"/that->unit_name/"inputs names"]
+      = that->inputs_list_input.value();
+    circuit[root/"units"/that->unit_name/"outputs names"]
+      = that->outputs_list_input.value();
+    circuit[root/"units"/that->unit_name/"context size"]
+      = (int)that->context_size_input.value();
+    bus(IM("screen update")); that->hide(); }
+  
+  Fl_Box         file_name_label;
+  Fl_Input       file_name_input;
+  Fl_Box         function_name_label;
+  Fl_Input       function_name_input;
+  Fl_Box         inputs_list_label;
+  Fl_Input       inputs_list_input;
+  Fl_Box         outputs_list_label;
+  Fl_Input       outputs_list_input;
+  Fl_Box         context_size_label;
+  Fl_Value_Input context_size_input;
+  Fl_Button      save_btn;
+  std::string    unit_name; };
 
 static editor::window* single_window = nullptr;
 static Fl_Button* generate_button = nullptr;
@@ -83,8 +232,7 @@ static Fl_Button* code_button = nullptr;
 
 editor::workspace::workspace(int x, int y, int w, int h)
 : Fl_Widget(x, y, w, h)
-{ 
-}
+{ }
 
 static int x_real(int x_screen)
 { int x0 = context[root/"draw pos"/"x"];
@@ -283,7 +431,7 @@ void editor::workspace::draw()
   for (std::string unit : circuit.ls(root/"units"))
   { if      (circuit[root/"units"/unit/"type"] == "constant")
     { fl_color(BLACK);
-      int val = circuit[root/"units"/unit/"value"];
+      float val = circuit[root/"units"/unit/"value"];
       fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
       int pixel_w = fl_width(std::to_string(val).c_str());
       int label_w = pixel_w / (int)context[root/"grid size"] + 1;
@@ -308,15 +456,191 @@ void editor::workspace::draw()
               pixel_w, 2 * (int)context[root/"grid size"],
               FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "delay") {}
+    else if (circuit[root/"units"/unit/"type"] == "delay")
+    { fl_color(BLACK);
+      int val = circuit[root/"units"/unit/"value"];
+      std::string label = std::string("z-").append(std::to_string(val));
+      fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+      int pixel_w = fl_width(label.c_str());
+      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      
+      int _x[5] = { 0 }; int _y[5] = { 0 };
+      _x[0] = circuit[root/"units"/unit/"x"];
+      _y[0] = circuit[root/"units"/unit/"y"];
+      _x[1] = _x[0] + label_w + 2; _y[1] = _y[0];
+      _x[2] = _x[0] + label_w;     _y[2] = _y[0] + 2;
+      _x[3] = _x[0] - 2;           _y[3] = _y[0] + 2;
+      _x[4] = _x[0];               _y[4] = _y[0];
+
+      circuit[root/"units"/unit/"inputs"/0/"x"] = _x[0] - 1;
+      circuit[root/"units"/unit/"inputs"/0/"y"] = _y[0] + 1;
+
+      circuit[root/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w + 1;
+      circuit[root/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
+
+      for (unsigned int i = 0; i < 4; i++)
+      { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
+                x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
+
+      fl_draw(label.c_str(),
+              x() + x_screen(_x[0]), y() + y_screen(_y[0]),
+              pixel_w, 2 * (int)context[root/"grid size"],
+              FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "sum") {}
+    else if (circuit[root/"units"/unit/"type"] == "sum")
+    { fl_color(BLACK);
+      int _x = circuit[root/"units"/unit/"x"];
+      int _y = circuit[root/"units"/unit/"y"];
+
+      circuit[root/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[root/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[root/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[root/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[root/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[root/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[root/"grid size"],
+              2 * (int)context[root/"grid size"]);
+      fl_line(x() + x_screen(_x + 1),
+              y() + y_screen(_y    ) + (int)context[root/"grid size"] / 2,
+              x() + x_screen(_x + 1),
+              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2);
+      fl_line(x() + x_screen(_x    ) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 1),
+              x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 1)); }
     
-    else if (circuit[root/"units"/unit/"type"] == "product") {}
+    else if (circuit[root/"units"/unit/"type"] == "product")
+    { fl_color(BLACK);
+      int _x = circuit[root/"units"/unit/"x"];
+      int _y = circuit[root/"units"/unit/"y"];
+      
+      circuit[root/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[root/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[root/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[root/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[root/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[root/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[root/"grid size"],
+              2 * (int)context[root/"grid size"]);
+      fl_line(x() + x_screen(_x + 0) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 0) + (int)context[root/"grid size"] / 2,
+              x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2);
+      fl_line(x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 0) + (int)context[root/"grid size"] / 2,
+              x() + x_screen(_x + 0) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2); }
     
-    else if (circuit[root/"units"/unit/"type"] == "function") {}
+    else if (circuit[root/"units"/unit/"type"] == "function")
+    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+      int _x0 = circuit[root/"units"/unit/"x"];
+      int _y0 = circuit[root/"units"/unit/"y"];
+      std::string label
+        = (std::string)circuit[root/"units"/unit/"function name"];
+      int pixel_w = fl_width(label.c_str());
+      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+
+      int _x[5] = { 0 }; int _y[5] = { 0 };
+      _x[0] = _x0;               _y[0] = _y0;
+      _x[1] = _x0 + label_w + 2; _y[1] = _y0;
+      _x[2] = _x0 + label_w;     _y[2] = _y0 + 2;
+      _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
+      _x[4] = _x0;               _y[4] = _y0;
+
+      circuit[root/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+      circuit[root/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+      circuit[root/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+      circuit[root/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+
+      for (unsigned int i = 0; i < 4; i++)
+      { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
+                x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
+
+      fl_draw(label.c_str(),
+             x() + x_screen(_x0), y() + y_screen(_y0),
+             pixel_w, 2 * (int)context[root/"grid size"],
+             FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "code block") {} }
+    else if (circuit[root/"units"/unit/"type"] == "code block")
+    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+      int _x0 = circuit[root/"units"/unit/"x"];
+      int _y0 = circuit[root/"units"/unit/"y"];
+      std::string label = (std::string)circuit[root/"units"/unit/"source file"];
+      label.append(":");
+      label.append((std::string)circuit[root/"units"/unit/"function name"]);
+      int pixel_w = fl_width(label.c_str());
+
+      std::string inputs
+        = (std::string)circuit[root/"units"/unit/"inputs names"];
+      std::list<std::string> ilist;
+      std::string current_i;
+      for (char c : inputs)
+      { if (c == ';') { ilist.push_back(current_i); current_i.clear();
+                        continue; }
+        current_i.push_back(c); }
+      for (std::string input : ilist)
+      { int pw = fl_width(input.c_str());
+        if (pw > pixel_w) { pixel_w = pw; } }
+
+      std::string outputs
+        = (std::string)circuit[root/"units"/unit/"outputs names"];
+      std::list<std::string> olist;
+      std::string current_o;
+      for (char c : outputs)
+      { if (c == ';') { olist.push_back(current_o); current_o.clear();
+                        continue; }
+        current_o.push_back(c); }
+      for (std::string output : olist)
+      { int pw = fl_width(output.c_str());
+        if (pw > pixel_w) { pixel_w = pw; } }
+
+      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0),
+              label_w * (int)context[root/"grid size"],
+              2 * (int)context[root/"grid size"]);
+      fl_draw(label.c_str(),
+              x() + x_screen(_x0), y() + y_screen(_y0),
+              pixel_w, 2 * (int)context[root/"grid size"],
+              FL_ALIGN_LEFT);
+
+      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2),
+              label_w * (int)context[root/"grid size"],
+              ilist.size() * 2 * (int)context[root/"grid size"]);
+      int icount = 0;
+      for (std::string input : ilist)
+      { fl_draw(input.c_str(),
+                x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * icount),
+                pixel_w, 2 * (int)context[root/"grid size"],
+                FL_ALIGN_LEFT);
+        circuit[root/"units"/unit/"inputs"/icount/"x"] = _x0;
+        circuit[root/"units"/unit/"inputs"/icount/"y"]
+          = _y0 + 2 + 2 * icount + 1;
+        icount++; }
+
+      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * ilist.size()),
+              label_w * (int)context[root/"grid size"],
+              olist.size() * 2 * (int)context[root/"grid size"]);
+      int ocount = 0;
+      for (std::string output : olist)
+      { fl_draw(output.c_str(),
+                x() + x_screen(_x0),
+                y() + y_screen(_y0 + 2 + 2 * ilist.size() + 2 * ocount),
+                pixel_w, 2 * (int)context[root/"grid size"],
+                FL_ALIGN_LEFT);
+        circuit[root/"units"/unit/"outputs"/ocount/"x"] = _x0 + label_w;
+        circuit[root/"units"/unit/"outputs"/ocount/"y"]
+          = _y0 + 2 + 2 * (int)ilist.size() + 2 * ocount + 1;
+        ocount++; }
+    } }
 
   // wires 
   fl_color(BLACK);
@@ -631,7 +955,7 @@ editor::window::window()
   context[root/"draw pos"/"y"] = 0;
   context[root/"cursor pos"/"x"] = 0;
   context[root/"cursor pos"/"y"] = 0;
-  context[root/"grid size"] = 20;
+  context[root/"grid size"] = 10;
 
   show(); }
 
@@ -785,7 +1109,23 @@ void editor::window::handler(void* ctx, IM mess)
 
     else if (context[root/"highlight"/"type"] == "output")
     { outputEditWindow w((std::string)context[root/"highlight"/"output"]);
-      while (w.shown()) { Fl::wait(); } } }
+      while (w.shown()) { Fl::wait(); } }
+
+    else if (context[root/"highlight"/"type"] == "unit")
+    { std::string unit = context[root/"highlight"/"unit"];
+      if (circuit[root/"units"/unit/"type"] == "constant")
+      { constEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
+
+      else if (circuit[root/"units"/unit/"type"] == "delay")
+      { delayEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
+
+      else if (circuit[root/"units"/unit/"type"] == "function")
+      { functionEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
+
+      else if (circuit[root/"units"/unit/"type"] == "code block")
+      { codeEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
+      
+      } }
 
   else if (mess == "space down") { context[root/"space"] = (int)1;
                                    bus(IM("click")); }
@@ -807,7 +1147,7 @@ void editor::window::handler(void* ctx, IM mess)
     { bus(IM("place prod press")); }
     else if (context[root/"edit mode"] == "place function")
     { bus(IM("place function press")); }
-    else if (context[root/"edit mode"] == "place code block press")
+    else if (context[root/"edit mode"] == "place code block")
     { bus(IM("place code block press")); }
     else if (context[root/"edit mode"] == "edit properties")
     { bus(IM("edit")); }
@@ -1016,7 +1356,7 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
     circuit[root/"units"/idx/"type"] = "constant";
-    circuit[root/"units"/idx/"value"] = 1;
+    circuit[root/"units"/idx/"value"] = 1.0f;
     that->redraw(); }
     
   else if (mess == "place delay press")
@@ -1054,7 +1394,8 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
     circuit[root/"units"/idx/"type"] = "function";
-    circuit[root/"untis"/idx/"numerator poly"] = "1;";
+    circuit[root/"units"/idx/"function name"] = "";
+    circuit[root/"units"/idx/"numerator poly"] = "1;";
     circuit[root/"units"/idx/"denominator poly"] = "1;";
     that->redraw(); }
     
@@ -1066,7 +1407,8 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
     circuit[root/"units"/idx/"type"] = "code block";
     circuit[root/"units"/idx/"source file"] = "";
-    circuit[root/"units"/idx/"name"] = "";
-    circuit[root/"units"/idx/"inputs number"] = 0;
-    circuit[root/"units"/idx/"outputs number"] = 0; }
+    circuit[root/"units"/idx/"function name"] = "";
+    circuit[root/"units"/idx/"inputs names"] = "";
+    circuit[root/"units"/idx/"outputs names"] = "";
+    circuit[root/"units"/idx/"context size"] = 0; }
 }  
