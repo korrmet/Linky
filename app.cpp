@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "editor.hpp"
+#include "generator.hpp"
 #include "independency.hpp"
 #include <FL/Fl.H>
 #include <fstream>
@@ -10,10 +11,15 @@ independency::storage circuit;
 independency::storage context;
 independency::storage params;
 
-void app_handler(void* ctx, IM mess);
+namespace app {
+
+void handler(void* ctx, IM mess);
+
+}
 
 int main(int argc, char** argv)
-{ bus + app_handler;
+{ bus + app::handler;
+  bus + generator::handler;
   PRINT("Linky v0\n");
   
   if (argc > 1) { bus(IM("file open") << IV("name", argv[1])); }
@@ -21,7 +27,9 @@ int main(int argc, char** argv)
   editor::window main_window;
   Fl::run(); return 0; }
 
-void app_handler(void* ctx, IM mess)
+namespace app {
+
+void handler(void* ctx, IM mess)
 { if (mess == "file open")
   { std::ifstream file(mess["path"]);
     if (!file.is_open())
@@ -40,3 +48,5 @@ void app_handler(void* ctx, IM mess)
     { PRINT("Can't save %s\n", ((std::string)mess["path"]).c_str());
       return; }
     file << circuit.serialize(); file.close(); } }
+
+}
