@@ -805,8 +805,6 @@ editor::window::window()
   menu_bar.add("Debug/Print circuit", 0, control_cb, (void*)"print circuit");
   menu_bar.add("Debug/Print params", 0, control_cb, (void*)"print params");
   menu_bar.add("Debug/Print context", 0, control_cb, (void*)"print context");
-  menu_bar.add("Debug/Make network", 0, control_cb, (void*)"make network");
-  menu_bar.add("Debug/Clear network", 0, control_cb, (void*)"clear network");
 #endif
 
   side_screen.box(FL_BORDER_BOX);
@@ -972,13 +970,6 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 
   else if (cmd == "print context")
   { PRINT("Context:\n%s\n", context.serialize().c_str()); }
-
-  else if (cmd == "make network")
-  { PRINT("Make network\n"); context[root/"network"];
-    bus(IM("make network")); }
-
-  else if (cmd == "clear network")
-  { PRINT("Clear network\n"); context.del(root/"network"); }
 
   else if (cmd == "open")
   { char* path = fl_file_chooser("Open file", "*.linky", nullptr, true);
