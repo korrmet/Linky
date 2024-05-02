@@ -740,7 +740,21 @@ void editor::workspace::draw()
   // inputs are green circles, outputs are blue circuits
   if (context[root/"edit mode"]        == "place wire" ||
       context(root/"highlight"/"type") == "wire point")
-  { for (std::string unit : circuit.ls(root/"units"))
+  { // ---> wire markers
+    fl_line_style(FL_SOLID, 1); fl_color(BLUE);
+    for (std::string wire : circuit.ls(root/"wires"))
+    { int _x0 = circuit[root/"wires"/wire/0/"x"];
+      int _y0 = circuit[root/"wires"/wire/0/"y"];
+      fl_rect(x() + x_screen(_x0) - CSIZE, y() + y_screen(_y0) - CSIZE,
+              CSIZE*2, CSIZE*2);
+      int _x1 = circuit[root/"wires"/wire/1/"x"];
+      int _y1 = circuit[root/"wires"/wire/1/"y"];
+      fl_rect(x() + x_screen(_x1) - CSIZE, y() + y_screen(_y1) - CSIZE,
+              CSIZE*2, CSIZE*2); }
+    // <---
+    
+    // ---> units inputs and outputs
+    for (std::string unit : circuit.ls(root/"units"))
     { fl_line_style(FL_SOLID, 1); fl_color(GREEN);
       for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
       { int _x = circuit[root/"units"/unit/"inputs"/input/"x"];
@@ -754,7 +768,9 @@ void editor::workspace::draw()
         int _y = circuit[root/"units"/unit/"outputs"/output/"y"];
         fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
                CSIZE*2, CSIZE*2, 0.0, 360.0); } }
+    // <---
 
+    // ---> circuit inputs
     // input can contain only output (respectively to scheme point of view)
     fl_line_style(FL_SOLID, 1); fl_color(BLUE);
     for (std::string input : circuit.ls(root/"inputs"))
@@ -763,7 +779,9 @@ void editor::workspace::draw()
       int _y = circuit[root/"inputs"/input/"point"/"y"];
       fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
              CSIZE*2, CSIZE*2, 0.0, 360.0); }
+    // <---
 
+    // ---> circuit outputs
     // output can contain only input (respectively to scheme point of view)
     fl_line_style(FL_SOLID, 1); fl_color(GREEN);
     for (std::string output : circuit.ls(root/"outputs"))
@@ -771,7 +789,9 @@ void editor::workspace::draw()
       int _x = circuit[root/"outputs"/output/"point"/"x"];
       int _y = circuit[root/"outputs"/output/"point"/"y"];
       fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
-             CSIZE*2, CSIZE*2, 0.0, 360.0); } }
+             CSIZE*2, CSIZE*2, 0.0, 360.0); }
+    // <---
+    }
 
   // editable items
   if (context[root/"edit mode"] == "edit properties")
