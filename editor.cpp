@@ -13,11 +13,13 @@
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
 #define LBLUE 0xEEEEFF00
+#define RED   0xFF000000
 #define BLACK 0x00000000
 #define WHITE 0xFFFFFF00
 
 #define CSIZE 5
 
+// ---> edit input window
 class inputEditWindow : public Fl_Window
 { public:
   inputEditWindow(std::string name)
@@ -40,7 +42,9 @@ class inputEditWindow : public Fl_Window
   Fl_Box      label;
   Fl_Button   save_btn;
   std::string input_name; };
+// <---
 
+// ---> edit output window
 class outputEditWindow : public Fl_Window
 { public:
   outputEditWindow(std::string name)
@@ -63,7 +67,9 @@ class outputEditWindow : public Fl_Window
   Fl_Box      label;
   Fl_Button   save_btn;
   std::string output_name; };
+// <---
 
+// ---> edit constant window
 class constEditWindow : public Fl_Window
 { public:
   constEditWindow(std::string name)
@@ -86,7 +92,9 @@ class constEditWindow : public Fl_Window
   Fl_Box         label;
   Fl_Button      save_btn;
   std::string    unit_name; };
+// <---
 
+// ---> edit delay window
 class delayEditWindow : public Fl_Window
 { public:
   delayEditWindow(std::string name)
@@ -110,7 +118,9 @@ class delayEditWindow : public Fl_Window
   Fl_Box         label;
   Fl_Button      save_btn;
   std::string    unit_name; };
+// <---
 
+// ---> edit function window
 class functionEditWindow : public Fl_Window
 { public:
   functionEditWindow(std::string name)
@@ -153,7 +163,9 @@ class functionEditWindow : public Fl_Window
   Fl_Input    denominator_input;
   Fl_Button   save_btn;
   std::string unit_name; };
+// <---
 
+// ---> edit code window
 class codeEditWindow : public Fl_Window
 { public:
   codeEditWindow(std::string name)
@@ -213,9 +225,12 @@ class codeEditWindow : public Fl_Window
   Fl_Value_Input context_size_input;
   Fl_Button      save_btn;
   std::string    unit_name; };
+// <---
 
 static editor::window* single_window = nullptr;
 static Fl_Button* generate_button = nullptr;
+static Fl_Button* check_circuit_button = nullptr;
+static Fl_Button* clear_errors_button = nullptr;
 static Fl_Button* edit_button = nullptr;
 static Fl_Button* wire_button = nullptr;
 static Fl_Button* input_button = nullptr;
@@ -354,19 +369,21 @@ void editor::workspace::draw()
 { fl_push_clip(x(), y(), w(), h());
   fl_line_style(FL_SOLID, 1);
 
-  // background
+  // ---> background
   fl_color(WHITE);
   fl_rectf(x(), y(), w(), h());
+  // <---
 
-  // grid
+  // ---> grid
   fl_color(LBLUE);
   if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
   for (unsigned int i = 0; i < w(); i += (int)context[root/"grid size"])
   { fl_line(x() + i, y(), x() + i, y() + h()); }
   for (unsigned int i = 0; i < h(); i += (int)context[root/"grid size"])
   { fl_line(x(), y() + i, x() + w(), y() + i); }
+  // <---
 
-  // inputs
+  // ---> inputs
   fl_color(BLACK);
   for (std::string input : circuit.ls(root/"inputs"))
   { int _x[6] = { 0 }; int _y[6] = { 0 };
@@ -396,8 +413,9 @@ void editor::workspace::draw()
             x() + x_screen(_x[0]), y() + y_screen(_y[0]),
             pixel_w, 2 * (int)context[root/"grid size"],
             FL_ALIGN_LEFT); }
+  // <---
 
-  // outputs
+  // ---> outputs
   for (std::string output : circuit.ls(root/"outputs"))
   { int _x[6] = { 0 }; int _y[6] = { 0 };
 
@@ -426,8 +444,9 @@ void editor::workspace::draw()
             x() + x_screen(_x[0] + 1), y() + y_screen(_y[0]),
             pixel_w, 2 * (int)context[root/"grid size"],
             FL_ALIGN_LEFT); }
+  // <---
 
-  // units
+  // ---> units
   for (std::string unit : circuit.ls(root/"units"))
   { if      (circuit[root/"units"/unit/"type"] == "constant")
     { fl_color(BLACK);
@@ -641,16 +660,18 @@ void editor::workspace::draw()
           = _y0 + 2 + 2 * (int)ilist.size() + 2 * ocount + 1;
         ocount++; }
     } }
+  // <---
 
-  // wires 
+  // ---> wires 
   fl_color(BLACK);
   for (std::string wire : circuit.ls(root/"wires"))
   { fl_line(x() + x_screen((int)circuit[root/"wires"/wire/0/"x"]),
             y() + y_screen((int)circuit[root/"wires"/wire/0/"y"]),
             x() + x_screen((int)circuit[root/"wires"/wire/1/"x"]),
             y() + y_screen((int)circuit[root/"wires"/wire/1/"y"])); }
+  // <---
 
-  // joints
+  // ---> joints
   fl_line_style(FL_SOLID, 1); fl_color(BLACK);
   struct point_data { int x; int y; int count; };
   std::list<point_data> points;
@@ -672,8 +693,9 @@ void editor::workspace::draw()
     { fl_pie(x() + x_screen(point.x) - CSIZE,
              y() + y_screen(point.y) - CSIZE,
              CSIZE*2, CSIZE*2, 0.0, 360.0); } }
+  // <---
 
-  // cursor
+  // ---> cursor
   fl_line_style(FL_SOLID, 3); fl_color(GREEN);
   fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]) - CSIZE,
           y() + y_screen((int)context[root/"cursor pos"/"y"]),
@@ -683,9 +705,9 @@ void editor::workspace::draw()
           y() + y_screen((int)context[root/"cursor pos"/"y"]) - CSIZE,
           x() + x_screen((int)context[root/"cursor pos"/"x"]),
           y() + y_screen((int)context[root/"cursor pos"/"y"]) + CSIZE);
+  // <---
 
-
-  // highlight
+  // ---> highlight
   if (!!context(root/"highlight"))
   { fl_line_style(FL_SOLID, 1); fl_color(BLUE);
 
@@ -773,6 +795,17 @@ void editor::workspace::draw()
       int _y = circuit[root/"outputs"/output/"y"];
       fl_rect(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
               CSIZE*2, CSIZE*2); } }
+  // <---
+  
+  // ---> errors
+  fl_line_style(FL_SOLID, 3); fl_color(RED);
+  for (std::string net : context.ls(root/"network errors"))
+  { for (std::string wire : context.ls(root/"network"/net/"wires"))
+    { fl_line(x() + x_screen((int)circuit[root/"wires"/wire/0/"x"]),
+              y() + y_screen((int)circuit[root/"wires"/wire/0/"y"]),
+              x() + x_screen((int)circuit[root/"wires"/wire/1/"x"]),
+              y() + y_screen((int)circuit[root/"wires"/wire/1/"y"])); } }
+  // <---
 
   fl_line_style(0); fl_color(0); fl_pop_clip(); }
 
@@ -822,9 +855,36 @@ editor::window::window()
   generate_button->callback(control_cb, (void*)"generate code");
   side_screen.add(generate_button);
 
-  edit_button = new Fl_Button(generate_button->x(),
-                              generate_button->y() + generate_button->h() + 10,
-                              (generate_button->w() - 5) / 2,
+  check_circuit_button = new Fl_Button(generate_button->x(),
+                                       generate_button->y()
+                                         + generate_button->h() + 5,
+                                       generate_button->w(), 
+                                       20, "Check circuit");
+  check_circuit_button->box(FL_BORDER_BOX);
+  check_circuit_button->labelsize(12);
+  check_circuit_button->clear_visible_focus();
+  check_circuit_button->color(Fl_Color(WHITE));
+  check_circuit_button->color2(Fl_Color(BLUE));
+  check_circuit_button->callback(control_cb, (void*)"check circuit errors");
+  side_screen.add(check_circuit_button);
+
+  clear_errors_button = new Fl_Button(check_circuit_button->x(),
+                                      check_circuit_button->y()
+                                        + check_circuit_button->h() + 5,
+                                      check_circuit_button->w(),
+                                      20, "Clear errors");
+  clear_errors_button->box(FL_BORDER_BOX);
+  clear_errors_button->labelsize(12);
+  clear_errors_button->clear_visible_focus();
+  clear_errors_button->color(Fl_Color(WHITE));
+  clear_errors_button->color2(Fl_Color(BLUE));
+  clear_errors_button->callback(control_cb, (void*)"clear errors");
+  side_screen.add(clear_errors_button);
+
+  edit_button = new Fl_Button(clear_errors_button->x(),
+                              clear_errors_button->y()
+                                + clear_errors_button->h() + 10,
+                              (clear_errors_button->w() - 5) / 2,
                               20, "Edit [E]");
   edit_button->box(FL_BORDER_BOX);
   edit_button->labelsize(12);
@@ -971,6 +1031,12 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "print context")
   { PRINT("Context:\n%s\n", context.serialize().c_str()); }
 
+  else if (cmd == "generate code") { bus(IM("generate code"));
+                                     bus(IM("screen update")); }
+
+  else if (cmd == "check circuit errors") { bus(IM("check circuit errors"));
+                                            bus(IM("screen update")); }
+
   else if (cmd == "open")
   { char* path = fl_file_chooser("Open file", "*.linky", nullptr, true);
     if (path) { bus(IM("file open") << IV("path", path)); } }
@@ -1076,7 +1142,8 @@ void editor::window::handler(void* ctx, IM mess)
     that->redraw(); }
 
   else if (mess == "delete")
-  { if (!context(root/"highlight")) { return; }
+  { bus(IM("clear errors"));
+    if (!context(root/"highlight")) { return; }
 
     if (context[root/"highlight"/"type"] == "wire point")
     { std::string wire = context[root/"highlight"/"wire"];
@@ -1130,8 +1197,14 @@ void editor::window::handler(void* ctx, IM mess)
   else if (mess == "space down") { context[root/"space"] = (int)1;
                                    bus(IM("click")); }
 
+  else if (mess == "clear errors") { context.del(root/"network");
+                                     context.del(root/"network errors");
+                                     bus(IM("screen update")); }
+
   else if (mess == "click")
-  { if (context[root/"edit mode"] == "place wire")
+  { bus(IM("clear errors"));
+
+    if (context[root/"edit mode"] == "place wire")
     { bus(IM("place wire press")); }
     else if (context[root/"edit mode"] == "place input")
     { bus(IM("place input press")); }
