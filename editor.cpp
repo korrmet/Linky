@@ -695,18 +695,6 @@ void editor::workspace::draw()
              CSIZE*2, CSIZE*2, 0.0, 360.0); } }
   // <---
 
-  // ---> cursor
-  fl_line_style(FL_SOLID, 3); fl_color(GREEN);
-  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]) - CSIZE,
-          y() + y_screen((int)context[root/"cursor pos"/"y"]),
-          x() + x_screen((int)context[root/"cursor pos"/"x"]) + CSIZE,
-          y() + y_screen((int)context[root/"cursor pos"/"y"]));
-  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]),
-          y() + y_screen((int)context[root/"cursor pos"/"y"]) - CSIZE,
-          x() + x_screen((int)context[root/"cursor pos"/"x"]),
-          y() + y_screen((int)context[root/"cursor pos"/"y"]) + CSIZE);
-  // <---
-
   // ---> highlight
   if (!!context(root/"highlight"))
   { fl_line_style(FL_SOLID, 1); fl_color(BLUE);
@@ -825,6 +813,35 @@ void editor::workspace::draw()
               y() + y_screen((int)circuit[root/"wires"/wire/0/"y"]),
               x() + x_screen((int)circuit[root/"wires"/wire/1/"x"]),
               y() + y_screen((int)circuit[root/"wires"/wire/1/"y"])); } }
+
+  for (std::string error : context.ls(root/"sequence errors"))
+  { std::string type = context[root/"sequence errors"/error/"type"];
+    std::string id = context[root/"sequence errors"/error/"id"];
+
+    if (type == "input")
+    { int sx = x_screen((int)circuit[root/"inputs"/id/"x"]);
+      int sy = y_screen((int)circuit[root/"inputs"/id/"y"]);
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
+    else if (type == "output")
+    { int sx = x_screen((int)circuit[root/"outputs"/id/"x"]);
+      int sy = y_screen((int)circuit[root/"outputs"/id/"y"]);
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
+    else if (type == "unit")
+    { int sx = x_screen((int)circuit[root/"units"/id/"x"]);
+      int sy = y_screen((int)circuit[root/"units"/id/"y"]);
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); } }
+  // <---
+
+  // ---> cursor
+  fl_line_style(FL_SOLID, 3); fl_color(GREEN);
+  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]) - CSIZE,
+          y() + y_screen((int)context[root/"cursor pos"/"y"]),
+          x() + x_screen((int)context[root/"cursor pos"/"x"]) + CSIZE,
+          y() + y_screen((int)context[root/"cursor pos"/"y"]));
+  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]),
+          y() + y_screen((int)context[root/"cursor pos"/"y"]) - CSIZE,
+          x() + x_screen((int)context[root/"cursor pos"/"x"]),
+          y() + y_screen((int)context[root/"cursor pos"/"y"]) + CSIZE);
   // <---
 
   fl_line_style(0); fl_color(0); fl_pop_clip(); }
@@ -1059,7 +1076,8 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 
   else if (cmd == "open")
   { char* path = fl_file_chooser("Open file", "*.linky", nullptr, true);
-    if (path) { bus(IM("file open") << IV("path", path)); } }
+    if (path) { bus(IM("file open") << IV("path", path)); }
+    bus(IM("screen update")); }
 
   else if (cmd == "save")
   { if (!params(root/"circruit file path"))
@@ -1219,6 +1237,7 @@ void editor::window::handler(void* ctx, IM mess)
 
   else if (mess == "clear errors") { context.del(root/"network");
                                      context.del(root/"network errors");
+                                     context.del(root/"sequence errors");
                                      bus(IM("screen update")); }
 
   else if (mess == "click")

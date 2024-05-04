@@ -23,28 +23,6 @@
 // 7) If all of the units are marked, output list contains valid
 //    calculations order. Otherwise you have an error.
 
-// Example usage:
-// [in]-->(+)-----------*-->[k]-->[out]
-//         |            |
-//         +--[delay]<--+
-//   circuit_calculator c;
-//   c.u("in").o("val", true)
-//    .u("sum").i("in 1").i("in 2").o("out")
-//    .u("delay").i("in").o("out", true)
-//    .u("k").i("in").o("out")
-//    .u("out").i("val")
-//    .connect("in", "val", "input")
-//    .connect("sum", "in 1", "input")
-//    .connect("sum", "out", "nogain")
-//    .connect("k", "in", "nogain")
-//    .connect("k", "out", "output")
-//    .connect("out", "val", "output")
-//    .connect("delay", "in", "nogain")
-//    .connect("delay", "out", "loopback")
-//    .connect("sum", "in 2", "loopback");
-//
-//  std::list<std::string> solving_order;
-//  c.schedule(solving_order);
 class circuit_calculator
 { public:
 
@@ -109,41 +87,23 @@ class circuit_calculator
         { unit::pin source;
           if (!output(p.nid, source)) { break; }
           if (!source.active) { break; }
-          p.active = true;
-          icount++; }
+          p.active = true; icount++; }
 
         if (icount == u.i.size())
-        { u.solved = true;
-          for (unit::pin& p : u.o)
-          { p.active = true; } }
+        { u.solved = true; for (unit::pin& p : u.o) { p.active = true; } }
 
-      if (u.solved) { s.push_back(u.id); count++; } }
+        if (u.solved) { s.push_back(u.id); count++; } }
     } while (count);
 
     unsigned int ucount = 0;
     for (unit& u : units) { if (u.solved) { ucount++; } }
-
     if (ucount != units.size()) { return false; }
-
     return true; }
-
-  void print()
-  { PRINT("units:\n");
-    for (unit& u : units)
-    { PRINT("%s", u.solved ? "*" : " ");
-      PRINT(" %s: ", u.id.c_str());
-
-      for (unit::pin i : u.i)
-      { PRINT("i%s(%s) ", i.id.c_str(), i.nid.c_str()); }
-
-      for (unit::pin o : u.o)
-      { PRINT("o%s(%s) ", o.id.c_str(), o.nid.c_str()); }
-
-      PRINT("\n"); } }
 
   struct unit
   { struct pin { pin() : active(false) {}
                  bool active; std::string id; std::string nid; };
+    unit() : solved(false) {}
     std::string id;
     bool solved;
     std::list<pin> i, o; };
@@ -172,122 +132,11 @@ void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
   { bus(IM("check circuit errors"));
-    if (circuit.ls(root/"network errors").size()) { return; }
+    if (context.ls(root/"network errors").size()) { return; }
+    if (context.ls(root/"sequence errors").size()) { return; }
     
     // ---> code generation routine
 
-    // prepare for calculations
-    context.del(root/"sequence");
-
-    // expand functions polynoms
-    for (std::string unit : circuit.ls(root/"units"))
-    { if (circuit[root/"units"/unit/"type"] == "function")
-      { std::list<float> polynom;
-        int counter = 0;
-        std::string current;
-        std::string numerator = circuit[root/"units"/unit/"numerator poly"];
-        std::string denominator = circuit[root/"units"/unit/"denominator poly"];
-
-        for (char c : numerator)
-        { if (c == ';') { polynom.push_back(std::stof(current));
-                          current.clear(); continue; }
-          current.push_back(c); }
-
-        for (float v : polynom)
-        { circuit[root/"units"/unit/"numerator poly"/counter] = v; counter++; }
-        polynom.clear();
-        current.clear();
-
-        for (char c : denominator)
-        { if (c == ';') { polynom.push_back(std::stof(current));
-                          current.clear(); continue; }
-          current.push_back(c); }
-
-        for (float v : polynom)
-        { circuit[root/"units"/unit/"denominator poly"/counter] = v;
-          counter++; } } }
-    
-    // numerate all of the entities to correctly insert it to the calculator
-    unsigned int counter = 0;
-    for (std::string input : circuit.ls(root/"inputs"))
-    { circuit[root/"inputs"/input] = std::to_string(counter); counter++;
-      circuit[root/"inputs"/input/"vout"] = std::to_string(counter);
-      counter++; }
-
-    for (std::string output : circuit.ls(root/"outputs"))
-    { circuit[root/"outputs"/output] = std::to_string(counter); counter++;
-      circuit[root/"outputs"/output/"vin"] = std::to_string(counter);
-      counter++; }
-
-    for (std::string unit : circuit.ls(root/"units"))
-    { circuit[root/"units"/unit] = std::to_string(counter); counter++;
-      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
-      { circuit[root/"units"/unit/"inputs"/input] = std::to_string(counter);
-        counter++; }
-      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
-      { circuit[root/"units"/unit/"outputs"/output] = std::to_string(counter);
-        counter++; } }
-
-    for (std::string net : context.ls(root/"network"))
-    { context[root/"network"/net] = std::to_string(counter); counter++; }
-
-    // insert all of the units and nets to the calculator
-    circuit_calculator c;
-    for (std::string input : circuit.ls(root/"inputs"))
-    { c.u((std::string)circuit[root/"inputs"/input])
-       .o((std::string)circuit[root/"inputs"/input/"vout"], true); }
-
-    for (std::string output : circuit.ls(root/"outputs"))
-    { c.u((std::string)circuit[root/"outputs"/output])
-       .i((std::string)circuit[root/"outputs"/output/"vin"]); }
-
-    for (std::string unit : circuit.ls(root/"units"))
-    { c.u((std::string)circuit[root/"units"/unit]);
-      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
-      { c.i((std::string)circuit[root/"units"/unit/"inputs"/input]); }
-      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
-      { bool active = false;
-        if (circuit[root/"units"/unit/"type"] == "constant") { active = true; }
-        if (circuit[root/"units"/unit/"type"] == "delay")    { active = true; }
-        if (circuit[root/"units"/unit/"type"] == "function" &&
-            !!circuit(root/"units"/unit/"numerator poly"/0) &&
-            circuit[root/"units"/unit/"numerator poly"/0] == 0)
-                                                             { active = true; }
-        c.o((std::string)circuit[root/"units"/unit/"outputs"/output],
-            active); } }
-
-    for (std::string net : context.ls(root/"network"))
-    { std::string nid = (std::string)context[root/"network"/net];
-      for (std::string input : context.ls(root/"network"/net/"inputs"))
-      { std::string uid = (std::string)circuit[root/"inputs"/input];
-        std::string pid = (std::string)circuit[root/"inputs"/input/"vout"];
-        c.connect(uid, pid, nid); }
-
-      for (std::string output : context.ls(root/"network"/net/"outputs"))
-      { std::string uid = (std::string)circuit[root/"outputs"/output];
-        std::string pid = (std::string)circuit[root/"outputs"/output/"vin"];
-        c.connect(uid, pid, nid); }
-
-      for (std::string unit : context.ls(root/"network"/net/"units"))
-      { std::string uid = (std::string)circuit[root/"units"/unit];
-
-        for (std::string input :
-             context.ls(root/"network"/net/"units"/unit/"inputs"))
-        { std::string pid
-            = (std::string)circuit[root/"units"/unit/"inputs"/input];
-          c.connect(uid, pid, nid); }
-
-        for (std::string output :
-             context.ls(root/"network"/net/"units"/unit/"outputs"))
-        { std::string pid
-            = (std::string)circuit[root/"units"/unit/"outputs"/output];
-          c.connect(uid, pid, nid); } } }
-
-    std::list<std::string> sequence;
-    if (!c.schedule(sequence)) { PRINT("scheduling fail\n"); }
-    c.print();
-    PRINT("sequence size: %d\n", (int)sequence.size());
-    for (std::string item : sequence) { context[root/"sequence"/item]; }
     // <---
   }
   // <---
@@ -298,7 +147,9 @@ void generator::handler(void* ctx, IM mess)
     context.del(root/"network errors");
     bus(IM("make network"));
     bus(IM("scan network"));
-    bus(IM("check network")); }
+    bus(IM("check network"));
+    bus(IM("make sequence"));
+    bus(IM("check sequence")); }
   // <---
   
   // ---> make network
@@ -411,7 +262,187 @@ void generator::handler(void* ctx, IM mess)
       for (std::string unit : context.ls(root/"network"/net/"units"))
       { logical_in_count
           += context.ls(root/"network"/net/"units"/unit/"inputs").size(); }
-      if (logical_out_count == 0)
+      if (logical_in_count == 0)
       { context[root/"network errors"/net]; continue; } } }
+  // <---
+
+  // ---> make sequence
+  else if (mess == "make sequence")
+  { // ---> prepare for calculations
+    context.del(root/"sequence");
+    for (std::string unit : circuit.ls(root/"units"))
+    { if (circuit[root/"units"/unit/"type"] == "function")
+      { for (std::string k : circuit.ls(root/"units"/unit/"numerator poly"))
+        { circuit.del(root/"units"/unit/"numerator poly"/k); }
+        for (std::string k : circuit.ls(root/"units"/unit/"denominator poly"))
+        { circuit.del(root/"units"/unit/"denominator poly"/k); } } }
+    // <---
+
+    // ---> expand functions polynoms
+    for (std::string unit : circuit.ls(root/"units"))
+    { if (circuit[root/"units"/unit/"type"] == "function")
+      { std::list<float> polynom;
+        int counter = 0;
+        std::string current;
+        std::string numerator = circuit[root/"units"/unit/"numerator poly"];
+        std::string denominator = circuit[root/"units"/unit/"denominator poly"];
+
+        for (char c : numerator)
+        { if (c == ';') { polynom.push_back(std::stof(current));
+                          current.clear(); continue; }
+          current.push_back(c); }
+
+        for (float v : polynom)
+        { circuit[root/"units"/unit/"numerator poly"/counter] = v; counter++; }
+        polynom.clear();
+        current.clear();
+
+        for (char c : denominator)
+        { if (c == ';') { polynom.push_back(std::stof(current));
+                          current.clear(); continue; }
+          current.push_back(c); }
+
+        for (float v : polynom)
+        { circuit[root/"units"/unit/"denominator poly"/counter] = v;
+          counter++; } } }
+    // <---
+    
+    // ---> numerate all of the entities to correctly insert it to the
+    //      calculator
+    unsigned int counter = 0;
+    for (std::string input : circuit.ls(root/"inputs"))
+    { circuit[root/"inputs"/input] = std::to_string(counter); counter++;
+      circuit[root/"inputs"/input/"vout"] = std::to_string(counter);
+      counter++; }
+
+    for (std::string output : circuit.ls(root/"outputs"))
+    { circuit[root/"outputs"/output] = std::to_string(counter); counter++;
+      circuit[root/"outputs"/output/"vin"] = std::to_string(counter);
+      counter++; }
+
+    for (std::string unit : circuit.ls(root/"units"))
+    { circuit[root/"units"/unit] = std::to_string(counter); counter++;
+      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
+      { circuit[root/"units"/unit/"inputs"/input] = std::to_string(counter);
+        counter++; }
+      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+      { circuit[root/"units"/unit/"outputs"/output] = std::to_string(counter);
+        counter++; } }
+
+    for (std::string net : context.ls(root/"network"))
+    { context[root/"network"/net] = std::to_string(counter); counter++; }
+    // <---
+
+    // ---> insert all of the units and nets to the calculator
+    circuit_calculator c;
+    for (std::string input : circuit.ls(root/"inputs"))
+    { c.u((std::string)circuit[root/"inputs"/input])
+       .o((std::string)circuit[root/"inputs"/input/"vout"], true); }
+
+    for (std::string output : circuit.ls(root/"outputs"))
+    { c.u((std::string)circuit[root/"outputs"/output])
+       .i((std::string)circuit[root/"outputs"/output/"vin"]); }
+
+    for (std::string unit : circuit.ls(root/"units"))
+    { c.u((std::string)circuit[root/"units"/unit]);
+      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
+      { c.i((std::string)circuit[root/"units"/unit/"inputs"/input]); }
+      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+      { bool active = false;
+        if (circuit[root/"units"/unit/"type"] == "constant") { active = true; }
+        if (circuit[root/"units"/unit/"type"] == "delay")    { active = true; }
+        if (circuit[root/"units"/unit/"type"] == "function" &&
+            !!circuit(root/"units"/unit/"numerator poly"/0) &&
+            circuit[root/"units"/unit/"numerator poly"/0] == 0)
+                                                             { active = true; }
+        c.o((std::string)circuit[root/"units"/unit/"outputs"/output],
+            active); } }
+
+    for (std::string net : context.ls(root/"network"))
+    { std::string nid = (std::string)context[root/"network"/net];
+      for (std::string input : context.ls(root/"network"/net/"inputs"))
+      { std::string uid = (std::string)circuit[root/"inputs"/input];
+        std::string pid = (std::string)circuit[root/"inputs"/input/"vout"];
+        c.connect(uid, pid, nid); }
+
+      for (std::string output : context.ls(root/"network"/net/"outputs"))
+      { std::string uid = (std::string)circuit[root/"outputs"/output];
+        std::string pid = (std::string)circuit[root/"outputs"/output/"vin"];
+        c.connect(uid, pid, nid); }
+
+      for (std::string unit : context.ls(root/"network"/net/"units"))
+      { std::string uid = (std::string)circuit[root/"units"/unit];
+
+        for (std::string input :
+             context.ls(root/"network"/net/"units"/unit/"inputs"))
+        { std::string pid
+            = (std::string)circuit[root/"units"/unit/"inputs"/input];
+          c.connect(uid, pid, nid); }
+
+        for (std::string output :
+             context.ls(root/"network"/net/"units"/unit/"outputs"))
+        { std::string pid
+            = (std::string)circuit[root/"units"/unit/"outputs"/output];
+          c.connect(uid, pid, nid); } } }
+    // <---
+
+    // ---> get the sequence
+    std::list<std::string> sequence;
+    c.schedule(sequence);
+
+    for (std::string item : sequence)
+    { context[root/"sequence"/item];
+      bool found = false;
+      for (std::string input : circuit.ls(root/"inputs"))
+      { if (circuit[root/"inputs"/input] == item)
+        { context[root/"sequence"/item/"type"] = "input";
+          context[root/"sequence"/item/"id"] = input;
+          found = true; break; } }
+      if (found) { continue; }
+
+      for (std::string output : circuit.ls(root/"outputs"))
+      { if (circuit[root/"outputs"/output] == item)
+        { context[root/"sequence"/item/"type"] = "output";
+          context[root/"sequence"/item/"id"] = output;
+          found = true; break; } }
+      if (found) { continue; }
+
+      for (std::string unit : circuit.ls(root/"units"))
+      { if (circuit[root/"units"/unit] == item)
+        { context[root/"sequence"/item/"type"] = "unit";
+          context[root/"sequence"/item/"id"] = unit;
+          found = true; break; } }
+      if (found) { continue; } }
+    // <---
+  }
+  // <---
+
+  // ---> check sequence
+  else if (mess == "check sequence")
+  { context.del(root/"sequence errors");
+    unsigned int counter = 0;
+    for (std::string input : circuit.ls(root/"inputs"))
+    { context[root/"sequence errors"/counter/"type"] = "input";
+      context[root/"sequence errors"/counter/"id"] = input;
+      counter++; }
+
+    for (std::string output : circuit.ls(root/"outputs"))
+    { context[root/"sequence errors"/counter/"type"] = "output";
+      context[root/"sequence errors"/counter/"id"] = output;
+      counter++; }
+
+    for (std::string unit : circuit.ls(root/"units"))
+    { context[root/"sequence errors"/counter/"type"] = "unit";
+      context[root/"sequence errors"/counter/"id"] = unit;
+      counter++; } }
+
+  for (std::string item : context.ls(root/"sequence"))
+  { for (std::string error : context.ls(root/"sequence errors"))
+    { if (context[root/"sequence"/item/"type"] ==
+          context[root/"sequence errors"/error/"type"]
+          &&
+          context[root/"sequence"/item/"id"] == 
+          context[root/"sequence errors"/error/"id"])
+      { context.del(root/"sequence errors"/error); break; } } }
   // <---
 }
