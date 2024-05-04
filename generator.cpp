@@ -25,7 +25,7 @@
 
 // Example usage:
 // [in]-->(+)-----------*-->[k]-->[out]
-//  |            |
+//         |            |
 //         +--[delay]<--+
 //   circuit_calculator c;
 //   c.u("in").o("val", true)
@@ -45,21 +45,32 @@
 //
 //  std::list<std::string> solving_order;
 //  c.schedule(solving_order);
-//
-//  WARNING: did not check when one output connected to multiple output !!!
 class circuit_calculator
 { public:
 
+  /** \brief Adds unit to the calculator
+   *  \param id Identifier of the unit, should be unique for each */
   circuit_calculator& u(std::string id)
   { unit u; u.id = id; units.push_back(u); return *this; }
 
+  /** \brief Adds input to last added unit
+   *  \param id Identifier of the input, should be unique pin name inside
+   *            the unit */
   circuit_calculator& i(std::string id)
   { unit::pin p; p.id = id; units.back().i.push_back(p); return *this; }
 
+  /** \brief Adds output to last added unit
+   *  \param id     Identifier of the output, should be unique pin name
+   *                inside the unit
+   *  \param active This flag says that this output is alerady solved */
   circuit_calculator& o(std::string id, bool active = false)
   { unit::pin p; p.id = id; p.active = active;
     units.back().o.push_back(p); return *this; }
 
+  /** \brief Connects unit pin to the net
+   *  \param uid Unit identifier string
+   *  \param pid Pin identifier string
+   *  \param nid Net identifier string */
   circuit_calculator& connect(std::string uid,
                               std::string pid,
                               std::string nid)
@@ -79,7 +90,13 @@ class circuit_calculator
 
     return *this; }
 
-  // TODO: add unresolved list to mark errant units
+  /** \brief Make sequence of units calculation
+   *  \param s Reference to the list of strings to store the sequence
+   *  \retrun Result of scheduling
+   *  \retval true Calculations was performed well, the list of strings
+   *               contains right sequence of the units
+   *  \retval false Something went wrong, some units can't be calculated
+   *                because of the possible loops */
   bool schedule(std::list<std::string>& s)
   { unsigned int count = 0;
 
@@ -109,6 +126,20 @@ class circuit_calculator
     if (ucount != units.size()) { return false; }
 
     return true; }
+
+  void print()
+  { PRINT("units:\n");
+    for (unit& u : units)
+    { PRINT("%s", u.solved ? "*" : " ");
+      PRINT(" %s: ", u.id.c_str());
+
+      for (unit::pin i : u.i)
+      { PRINT("i%s(%s) ", i.id.c_str(), i.nid.c_str()); }
+
+      for (unit::pin o : u.o)
+      { PRINT("o%s(%s) ", o.id.c_str(), o.nid.c_str()); }
+
+      PRINT("\n"); } }
 
   struct unit
   { struct pin { pin() : active(false) {}
@@ -145,48 +176,118 @@ void generator::handler(void* ctx, IM mess)
     
     // ---> code generation routine
 
-    // prepare list of the units
-    // TODO: commented lines below may be not needed, but don't sure now
-    context.del(root/"calc list in");
+    // prepare for calculations
+    context.del(root/"sequence");
+
+    // expand functions polynoms
+    for (std::string unit : circuit.ls(root/"units"))
+    { if (circuit[root/"units"/unit/"type"] == "function")
+      { std::list<float> polynom;
+        int counter = 0;
+        std::string current;
+        std::string numerator = circuit[root/"units"/unit/"numerator poly"];
+        std::string denominator = circuit[root/"units"/unit/"denominator poly"];
+
+        for (char c : numerator)
+        { if (c == ';') { polynom.push_back(std::stof(current));
+                          current.clear(); continue; }
+          current.push_back(c); }
+
+        for (float v : polynom)
+        { circuit[root/"units"/unit/"numerator poly"/counter] = v; counter++; }
+        polynom.clear();
+        current.clear();
+
+        for (char c : denominator)
+        { if (c == ';') { polynom.push_back(std::stof(current));
+                          current.clear(); continue; }
+          current.push_back(c); }
+
+        for (float v : polynom)
+        { circuit[root/"units"/unit/"denominator poly"/counter] = v;
+          counter++; } } }
+    
+    // numerate all of the entities to correctly insert it to the calculator
+    unsigned int counter = 0;
     for (std::string input : circuit.ls(root/"inputs"))
-    { int idx = context.ls(root/"calc list in").size();
-      context[root/"calc list in"/idx/"type"] = "input";
-      context[root/"calc list in"/idx/"id"] = input; }
+    { circuit[root/"inputs"/input] = std::to_string(counter); counter++;
+      circuit[root/"inputs"/input/"vout"] = std::to_string(counter);
+      counter++; }
 
     for (std::string output : circuit.ls(root/"outputs"))
-    { int idx = context.ls(root/"calc list in").size();
-      context[root/"calc list in"/idx/"type"] = "output";
-      context[root/"calc list in"/idx/"id"] = output; }
+    { circuit[root/"outputs"/output] = std::to_string(counter); counter++;
+      circuit[root/"outputs"/output/"vin"] = std::to_string(counter);
+      counter++; }
 
     for (std::string unit : circuit.ls(root/"units"))
-    { int idx = context.ls(root/"calc list in").size();
-      context[root/"calc list in"/idx/"type"]
-        = circuit[root/"units"/unit/"type"];
-      context[root/"calc list in"/idx/"id"] = unit; }
+    { circuit[root/"units"/unit] = std::to_string(counter); counter++;
+      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
+      { circuit[root/"units"/unit/"inputs"/input] = std::to_string(counter);
+        counter++; }
+      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+      { circuit[root/"units"/unit/"outputs"/output] = std::to_string(counter);
+        counter++; } }
 
-    circuit_calculator c;
-    for (std::string uid : context.ls(root/"calc list in"))
-    { c.u(uid);
-      std::string type = context[root/"calc list in"/uid/"type"];
-      std::string id   = context[root/"calc list in"/uid/"id"];
-
-      if (type == "input")         {         c.o("o0", true); }
-      else if (type == "output")   { c.i("i0");               }
-      else if (type == "delay")    { c.i("i0").o("o0", true); }
-      else if (type == "constant") {         c.o("o0", true); }
-      else if (type == "function") { c.i("i0").o("o0"      ); }
-      else
-      { for (std::string input : circuit.ls(root/"units"/id/"inputs"))
-        { c.i(std::string("i").append(input)); }
-
-        for (std::string output : circuit.ls(root/"units"/id/"outputs"))
-        { c.o(std::string("o").append(output)); } } }
-
-    // TODO: run through the network, find out all of UID's and push
-    // it to the calculator using connect method
     for (std::string net : context.ls(root/"network"))
-    {
-    }
+    { context[root/"network"/net] = std::to_string(counter); counter++; }
+
+    // insert all of the units and nets to the calculator
+    circuit_calculator c;
+    for (std::string input : circuit.ls(root/"inputs"))
+    { c.u((std::string)circuit[root/"inputs"/input])
+       .o((std::string)circuit[root/"inputs"/input/"vout"], true); }
+
+    for (std::string output : circuit.ls(root/"outputs"))
+    { c.u((std::string)circuit[root/"outputs"/output])
+       .i((std::string)circuit[root/"outputs"/output/"vin"]); }
+
+    for (std::string unit : circuit.ls(root/"units"))
+    { c.u((std::string)circuit[root/"units"/unit]);
+      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
+      { c.i((std::string)circuit[root/"units"/unit/"inputs"/input]); }
+      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+      { bool active = false;
+        if (circuit[root/"units"/unit/"type"] == "constant") { active = true; }
+        if (circuit[root/"units"/unit/"type"] == "delay")    { active = true; }
+        if (circuit[root/"units"/unit/"type"] == "function" &&
+            !!circuit(root/"units"/unit/"numerator poly"/0) &&
+            circuit[root/"units"/unit/"numerator poly"/0] == 0)
+                                                             { active = true; }
+        c.o((std::string)circuit[root/"units"/unit/"outputs"/output],
+            active); } }
+
+    for (std::string net : context.ls(root/"network"))
+    { std::string nid = (std::string)context[root/"network"/net];
+      for (std::string input : context.ls(root/"network"/net/"inputs"))
+      { std::string uid = (std::string)circuit[root/"inputs"/input];
+        std::string pid = (std::string)circuit[root/"inputs"/input/"vout"];
+        c.connect(uid, pid, nid); }
+
+      for (std::string output : context.ls(root/"network"/net/"outputs"))
+      { std::string uid = (std::string)circuit[root/"outputs"/output];
+        std::string pid = (std::string)circuit[root/"outputs"/output/"vin"];
+        c.connect(uid, pid, nid); }
+
+      for (std::string unit : context.ls(root/"network"/net/"units"))
+      { std::string uid = (std::string)circuit[root/"units"/unit];
+
+        for (std::string input :
+             context.ls(root/"network"/net/"units"/unit/"inputs"))
+        { std::string pid
+            = (std::string)circuit[root/"units"/unit/"inputs"/input];
+          c.connect(uid, pid, nid); }
+
+        for (std::string output :
+             context.ls(root/"network"/net/"units"/unit/"outputs"))
+        { std::string pid
+            = (std::string)circuit[root/"units"/unit/"outputs"/output];
+          c.connect(uid, pid, nid); } } }
+
+    std::list<std::string> sequence;
+    if (!c.schedule(sequence)) { PRINT("scheduling fail\n"); }
+    c.print();
+    PRINT("sequence size: %d\n", (int)sequence.size());
+    for (std::string item : sequence) { context[root/"sequence"/item]; }
     // <---
   }
   // <---
