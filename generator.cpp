@@ -1,5 +1,22 @@
 #include "generator.hpp"
 
+// ---> string printf
+#include <cstdio>
+#include <string>
+#include <cstdarg>
+inline void print(std::string& s, const char* fmt, ...)
+{ std::string tmp;
+  va_list args, args2;
+  va_start(args, fmt);
+  va_copy(args2, args);
+  tmp.resize(vsnprintf(nullptr, 0, fmt, args2) + 1);
+  va_end(args2);
+  vsprintf(tmp.data(), fmt, args);
+  va_end(args);
+  tmp.pop_back();
+  s.append(tmp); }
+// <---
+
 // Calculations order
 // Algorithm is:
 // 1) All of the units at start have unresolved state, except of:
@@ -147,7 +164,100 @@ void generator::handler(void* ctx, IM mess)
     if (context.ls(root/"sequence errors").size()) { return; }
     
     // ---> code generation routine
+    std::string header; std::string source;
 
+    // ---> header
+    print(header, "#ifndef YOUR_CIRCUIT_H\n");
+    print(header, "#define YOUR_CIRCUIT_H\n\n");
+
+    unsigned int counter = 0;
+    print(header, "// inputs\n");
+    for (std::string input : circuit.ls(root/"inputs"))
+    { print(header, "#define %s %d\n",
+            ((std::string)circuit[root/"inputs"/input/"name"]).c_str(),
+            counter);
+      counter++; }
+    print(header, "#define INPUTS_COUNT %d\n", counter);
+
+    counter = 0;
+    print(header, "\n// outputs\n");
+    for (std::string output : circuit.ls(root/"outputs"))
+    { print(header, "#define %s %d\n",
+            ((std::string)circuit[root/"outputs"/output/"name"]).c_str(),
+            counter);
+      counter++; }
+    print(header, "#define OUTPUTS_COUNT %d\n", counter);
+
+    print(header, "\n// context\n");
+    unsigned int context_size = 0;
+    
+    for (std::string unit : circuit.ls(root/"units"))
+    { std::string utype = circuit[root/"units"/unit/"type"];
+      if (utype == "delay")
+      { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+        context_size += (int)circuit[root/"units"/unit/"value"]; }
+      else if (utype == "function")
+      { std::string num_poly = circuit[root/"units"/unit/"numerator poly"];
+        std::string den_poly = circuit[root/"units"/unit/"denominator poly"];
+        unsigned int num_count = 0;
+        unsigned int den_count = 0;
+        for (char c : num_poly) { if (c == ';') { num_count++; } }
+        for (char c : den_poly) { if (c == ';') { den_count++; } }
+        if (num_count)
+        { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+          context_size += num_count; }
+        if (den_count)
+        { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+          context_size += den_count; } }
+      else if (utype == "code block")
+      { unsigned int block_context_size
+          = (int)circuit[root/"units"/unit/"context size"];
+        if (block_context_size)
+        { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+          context_size += block_context_size; } } }
+
+    print(header, "#define CONTEXT %d\n", context_size);
+
+    print(header, "\nvoid function(float* inputs,"
+                  " float* outputs, float* context);\n");
+
+    print(header, "\n#endif // YOUR_CIRCUIT_H\n");
+
+    PRINT("HEADER:\n%s\n", header.c_str());
+    // <---
+
+    // ---> source
+    print(source, "#include \"header.h\"\n");
+    for (std::string unit : circuit.ls(root/"units"))
+    { if (circuit[root/"units"/unit/"type"] == "code block")
+      { std::string fname = circuit[root/"units"/unit/"function name"];
+        print(source,
+              "extern void %s"
+              "(float* inputs, float* outputs, float* context);\n",
+              fname.c_str()); } }
+
+    print(source, "\nvoid function(float* inputs, "
+                  " float* outputs, float* context) {\n");
+    
+    for (std::string net : context.ls(root/"network"))
+    { print(source, "  float net_%s = 0.0f;\n", net.c_str()); }
+
+    for (std::string step : context.ls(root/"sequence"))
+    { std::string type = context[root/"sequence"/step/"type"];
+      std::string id = context[root/"sequence"/step/"id"];
+      
+      std::string unit_type;
+      if (type == "input") { unit_type = "circuit input"; }
+      else if (type == "output") { unit_type = "circuit output"; }
+      else if (type == "unit")
+      { unit_type = (std::string)circuit[root/"units"/id/"type"]; }
+
+      print(source, "\n  // %s, %s (%s)\n",
+            type.c_str(), unit_type.c_str(), id.c_str()); }
+    print(source, "}\n");
+
+    PRINT("SOURCE:\n%s\n", source.c_str());
+    // <---
     // <---
   }
   // <---

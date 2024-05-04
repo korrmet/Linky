@@ -1448,7 +1448,7 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[root/"inputs"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"inputs"/idx/"y"] = context[root/"cursor pos"/"y"];
     circuit[root/"inputs"/idx/"name"] =
-      std::string("i:").append(std::to_string(idx));
+      std::string("I_").append(std::to_string(idx));
     that->redraw(); }
 
   else if (mess == "place output press")
@@ -1458,7 +1458,7 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[root/"outputs"/idx/"x"] = context[root/"cursor pos"/"x"];
     circuit[root/"outputs"/idx/"y"] = context[root/"cursor pos"/"y"];
     circuit[root/"outputs"/idx/"name"] =
-      std::string("o:").append(std::to_string(idx));
+      std::string("O_").append(std::to_string(idx));
     that->redraw(); }
 
   else if (mess == "place const press")

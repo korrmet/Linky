@@ -3,7 +3,7 @@
         (0) {
             (x)<int>[1]
             (y)<int>[2]
-            (name)<string>[i:0]
+            (name)<string>[I_0]
             (point) {
                 (x)<int>[6]
                 (y)<int>[3]
@@ -11,73 +11,73 @@
         }
     }
     (units) {
-        (0) {
+        (0)<string>[4] {
             (x)<int>[12]
             (y)<int>[2]
             (type)<string>[sum]
             (inputs) {
-                (0) {
+                (0)<string>[5] {
                     (x)<int>[12]
                     (y)<int>[3]
                 }
-                (1) {
+                (1)<string>[6] {
                     (x)<int>[13]
                     (y)<int>[4]
                 }
             }
             (outputs) {
-                (0) {
+                (0)<string>[7] {
                     (x)<int>[14]
                     (y)<int>[3]
                 }
             }
         }
-        (1) {
+        (1)<string>[8] {
             (x)<int>[26]
             (y)<int>[2]
             (type)<string>[product]
             (inputs) {
-                (0) {
+                (0)<string>[9] {
                     (x)<int>[26]
                     (y)<int>[3]
                 }
-                (1) {
+                (1)<string>[10] {
                     (x)<int>[27]
                     (y)<int>[4]
                 }
             }
             (outputs) {
-                (0) {
+                (0)<string>[11] {
                     (x)<int>[28]
                     (y)<int>[3]
                 }
             }
         }
-        (2) {
+        (2)<string>[12] {
             (x)<int>[15]
             (y)<int>[5]
             (type)<string>[constant]
             (value)<float>[2.000000]
             (outputs) {
-                (0) {
+                (0)<string>[13] {
                     (x)<int>[25]
                     (y)<int>[6]
                 }
             }
         }
-        (5) {
+        (5)<string>[14] {
             (x)<int>[5]
             (y)<int>[5]
             (type)<string>[delay]
             (value)<int>[1]
             (inputs) {
-                (0) {
+                (0)<string>[15] {
                     (x)<int>[4]
                     (y)<int>[6]
                 }
             }
             (outputs) {
-                (0) {
+                (0)<string>[16] {
                     (x)<int>[10]
                     (y)<int>[6]
                 }
@@ -210,7 +210,7 @@
         (0) {
             (x)<int>[32]
             (y)<int>[2]
-            (name)<string>[o:0]
+            (name)<string>[O_0]
             (point) {
                 (x)<int>[33]
                 (y)<int>[3]
