@@ -23,6 +23,7 @@
 // 7) If all of the units are marked, output list contains valid
 //    calculations order. Otherwise you have an error.
 
+// ---> circuit calculator
 class circuit_calculator
 { public:
 
@@ -68,6 +69,7 @@ class circuit_calculator
 
     return *this; }
 
+  // ---> schedule
   /** \brief Make sequence of units calculation
    *  \param s Reference to the list of strings to store the sequence
    *  \retrun Result of scheduling
@@ -85,6 +87,7 @@ class circuit_calculator
         unsigned int icount = 0;
         for (unit::pin& p : u.i)
         { unit::pin source;
+          if (p.nid == "") { break; }
           if (!output(p.nid, source)) { break; }
           if (!source.active) { break; }
           p.active = true; icount++; }
@@ -99,6 +102,7 @@ class circuit_calculator
     for (unit& u : units) { if (u.solved) { ucount++; } }
     if (ucount != units.size()) { return false; }
     return true; }
+  // <---
 
   struct unit
   { struct pin { pin() : active(false) {}
@@ -110,6 +114,8 @@ class circuit_calculator
 
   private:
   std::list<unit> units;
+
+  // ---> inputs
   bool inputs(std::string nid, std::list<unit::pin*> pins)
   { bool res = false;
 
@@ -119,14 +125,19 @@ class circuit_calculator
         res = true; } }
 
     return res; }
+  // <---
 
+  // ---> output
+  // circuit should have only output
   bool output(std::string nid, unit::pin& pin)
   { for (unit& u : units)
     { for (unit::pin& p : u.o)
       { if (p.nid == nid) { pin = p; return true; } } }
 
     return false; }
+  // <---
 };
+// <---
 
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
