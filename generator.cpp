@@ -76,6 +76,16 @@ class circuit_calculator
 
     do { count = 0;
       for (unit& u : units)
+      { if (!u.o.size()) { continue; }
+        if (u.solved) { continue; }
+        unsigned int ocount = 0;
+        for (unit::pin& p : u.o) { if (p.active) { ocount++; } }
+        if (ocount == u.o.size())
+        { u.solved = true; s.push_back(u.id); count++; } }
+
+      if (count) { continue; }
+
+      for (unit& u : units)
       { if (u.solved) { continue; }
 
         unsigned int icount = 0;
@@ -208,7 +218,7 @@ void generator::handler(void* ctx, IM mess)
     // <---
 
     // ---> source
-    print(source, "#include \"header.h\"\n");
+    print(source, "#include \"your_circuit.h\"\n");
     for (std::string unit : circuit.ls(root/"units"))
     { if (circuit[root/"units"/unit/"type"] == "code block")
       { std::string fname = circuit[root/"units"/unit/"function name"];
