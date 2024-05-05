@@ -17,29 +17,6 @@ inline void print(std::string& s, const char* fmt, ...)
   s.append(tmp); }
 // <---
 
-// Calculations order
-// Algorithm is:
-// 1) All of the units at start have unresolved state, except of:
-//    - circuit inputs
-//    - constants
-//    - delay lines
-//    - functions with maximum order lower than z-1
-// 2) Run through the all of the unit list check is it solved:
-//    - circuit inputs are always solved
-//    - delay lines are always solved (actually no, but they consume
-//      initial zero signal so, it's okay)
-//    - functionw with maximum numerator order equal or lower than z-1
-//      (in other words k*z0 -> k == 0)
-//    - all of the units that have solved all of their inputs
-// 3) Mark solved units and increment the iteration counter
-// 4) Add marked unit if appears to the list
-// 5) If unit have output, run through the connected network and
-//    mark the connected inputs of other units
-// 6) Check the iteration counter, if no units marked this iteration,
-//    stop algorithm
-// 7) If all of the units are marked, output list contains valid
-//    calculations order. Otherwise you have an error.
-
 // ---> circuit calculator
 class circuit_calculator
 { public:
@@ -195,6 +172,8 @@ void generator::handler(void* ctx, IM mess)
     { std::string utype = circuit[root/"units"/unit/"type"];
       if (utype == "delay")
       { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+        print(header, "#define UNIT_%s_pos %d\n", unit.c_str(), context_size);
+        context_size++;
         context_size += (int)circuit[root/"units"/unit/"value"]; }
       else if (utype == "function")
       { std::string num_poly = circuit[root/"units"/unit/"numerator poly"];
@@ -253,7 +232,46 @@ void generator::handler(void* ctx, IM mess)
       { unit_type = (std::string)circuit[root/"units"/id/"type"]; }
 
       print(source, "\n  // %s, %s (%s)\n",
-            type.c_str(), unit_type.c_str(), id.c_str()); }
+            type.c_str(), unit_type.c_str(), id.c_str());
+
+      if (type == "input")
+      { std::string nid = circuit[root/"inputs"/id/"net"];
+        std::string iname = circuit[root/"inputs"/id/"name"];
+        print(source, "  net_%s = inputs[%s];\n",
+              nid.c_str(), iname.c_str()); }
+      else if (type == "output")
+      { std::string nid = circuit[root/"outputs"/id/"net"];
+        std::string oname = circuit[root/"outputs"/id/"name"];
+        print(source, "  outputs[%s] = net_%s;\n",
+              oname.c_str(), nid.c_str()); }
+      else if (type == "unit")
+      { if (unit_type == "constant")
+        { std::string nid = circuit[root/"units"/id/"outputs"/0/"net"];
+          float value = circuit[root/"units"/id/"value"];
+          print(source, "  net_%s = %f;\n", nid.c_str(), value); }
+        else if (unit_type == "sum")
+        { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
+          print(source, "  net_%s = net_%s + net_%s;\n",
+                onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+        else if (unit_type == "product")
+        { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
+          print(source, "  net_%s = net_%s * net_%s;\n",
+                onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+        else if (unit_type == "delay")
+        { std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
+
+          print(source, "  // not implemented yet\n"); }
+        else if (unit_type == "function")
+        { print(source, "  // not implemented yet\n"); }
+        else if (unit_type == "code block")
+        { print(source, "  // not implemented yet\n"); }
+      }
+    }
     print(source, "}\n");
 
     PRINT("SOURCE:\n%s\n", source.c_str());
@@ -335,7 +353,9 @@ void generator::handler(void* ctx, IM mess)
       { for (point p : points)
         { if (p.x == (int)circuit[root/"inputs"/input/"point"/"x"] &&
               p.y == (int)circuit[root/"inputs"/input/"point"/"y"])
-          { context[root/"network"/net/"inputs"/input]; break; } } }
+          { context[root/"network"/net/"inputs"/input];
+            circuit[root/"inputs"/input/"net"] = net;
+            break; } } }
       // <---
 
       // ---> scanning circuit outputs
@@ -343,7 +363,9 @@ void generator::handler(void* ctx, IM mess)
       { for (point p : points)
         { if (p.x == (int)circuit[root/"outputs"/output/"point"/"x"] &&
               p.y == (int)circuit[root/"outputs"/output/"point"/"y"])
-          { context[root/"network"/net/"outputs"/output]; break; } } }
+          { context[root/"network"/net/"outputs"/output];
+            circuit[root/"outputs"/output/"net"] = net;
+            break; } } }
       // <---
 
       // ---> scanning units
@@ -352,13 +374,15 @@ void generator::handler(void* ctx, IM mess)
         { for (point p : points)
           { if (p.x == (int)circuit[root/"units"/unit/"inputs"/input/"x"] &&
                 p.y == (int)circuit[root/"units"/unit/"inputs"/input/"y"])
-            { context[root/"network"/net/"units"/unit/"inputs"/input]; } } }
+            { context[root/"network"/net/"units"/unit/"inputs"/input];
+              circuit[root/"units"/unit/"inputs"/input/"net"] = net; } } }
 
         for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
         { for (point p : points)
           { if (p.x == (int)circuit[root/"units"/unit/"outputs"/output/"x"] &&
                 p.y == (int)circuit[root/"units"/unit/"outputs"/output/"y"])
-            { context[root/"network"/net/"units"/unit/"outputs"/output]; } } } }
+            { context[root/"network"/net/"units"/unit/"outputs"/output];
+              circuit[root/"units"/unit/"outputs"/output/"net"] = net; } } } }
       // <---
     } }
   // <---
