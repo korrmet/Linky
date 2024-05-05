@@ -172,9 +172,9 @@ void generator::handler(void* ctx, IM mess)
     { std::string utype = circuit[root/"units"/unit/"type"];
       if (utype == "delay")
       { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-        print(header, "#define UNIT_%s_pos %d\n", unit.c_str(), context_size);
-        context_size++;
-        context_size += (int)circuit[root/"units"/unit/"value"]; }
+        int value = circuit[root/"units"/unit/"value"];
+        print(header, "#define UNIT_%s_SIZE %d\n", unit.c_str(), value);
+        context_size += value; }
       else if (utype == "function")
       { std::string num_poly = circuit[root/"units"/unit/"numerator poly"];
         std::string den_poly = circuit[root/"units"/unit/"denominator poly"];
@@ -193,6 +193,8 @@ void generator::handler(void* ctx, IM mess)
           = (int)circuit[root/"units"/unit/"context size"];
         if (block_context_size)
         { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+          print(header, "#define UNIT_%s_SIZE %d\n",
+                unit.c_str(), block_context_size);
           context_size += block_context_size; } } }
 
     print(header, "#define CONTEXT %d\n", context_size);
@@ -265,7 +267,17 @@ void generator::handler(void* ctx, IM mess)
         { std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
 
-          print(source, "  // not implemented yet\n"); }
+          print(source, "  net_%s = context[UNIT_%s + UNIT_%s_SIZE - 1];\n",
+                onid.c_str(), id.c_str(), id.c_str());
+          print(source, "  for (unsigned int i = UNIT_%s + UNIT_%s_SIZE - 1;\n",
+                id.c_str(), id.c_str());
+          print(source, "       i > UNIT_%s;\n", id.c_str());
+          print(source, "       i--)\n");
+          print(source, "  { context[UNIT_%s + i] ="
+                        " context[UNIT_%s + i -1]; }\n",
+                id.c_str(), id.c_str());
+          print(source, "  context[UNIT_%s] = net_%s;\n",
+                id.c_str(), inid.c_str()); }
         else if (unit_type == "function")
         { print(source, "  // not implemented yet\n"); }
         else if (unit_type == "code block")
