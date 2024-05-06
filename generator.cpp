@@ -146,12 +146,7 @@ class circuit_calculator
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
-  { bus(IM("check circuit errors"));
-    if (context.ls(root/"network errors").size()) { return; }
-    if (context.ls(root/"sequence errors").size()) { return; }
-    
-    // ---> code generation routine
-    std::string header; std::string source;
+  { std::string header; std::string source;
 
     // ---> header
     print(header, "#ifndef YOUR_CIRCUIT_H\n");
@@ -246,58 +241,80 @@ void generator::handler(void* ctx, IM mess)
       print(source, "\n  // %s, %s (%s)\n",
             type.c_str(), unit_type.c_str(), id.c_str());
 
+      // ---> input
       if (type == "input")
       { std::string nid = circuit[root/"inputs"/id/"net"];
         std::string iname = circuit[root/"inputs"/id/"name"];
         print(source, "  net_%s = inputs[%s];\n",
               nid.c_str(), iname.c_str()); }
+      // <---
+
+      // ---> output
       else if (type == "output")
       { std::string nid = circuit[root/"outputs"/id/"net"];
         std::string oname = circuit[root/"outputs"/id/"name"];
         print(source, "  outputs[%s] = net_%s;\n",
               oname.c_str(), nid.c_str()); }
+      // <---
+      
       else if (type == "unit")
-      { if (unit_type == "constant")
+      { // ---> constant
+        if (unit_type == "constant")
         { std::string nid = circuit[root/"units"/id/"outputs"/0/"net"];
           float value = circuit[root/"units"/id/"value"];
           print(source, "  net_%s = %f;\n", nid.c_str(), value); }
+        // <---
+        
+        // ---> sum
         else if (unit_type == "sum")
         { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
           print(source, "  net_%s = net_%s + net_%s;\n",
                 onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+        // <---
+
+        // ---> product
         else if (unit_type == "product")
         { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
           print(source, "  net_%s = net_%s * net_%s;\n",
                 onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+        // <---
+
+        // ---> delay
         else if (unit_type == "delay")
         { std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
+          int value = circuit[root/"units"/id/"value"];
 
-          print(source, "  net_%s = context[UNIT_%s + UNIT_%s_SIZE - 1];\n",
-                onid.c_str(), id.c_str(), id.c_str());
-          print(source, "  for (unsigned int i = UNIT_%s + UNIT_%s_SIZE - 1;\n",
-                id.c_str(), id.c_str());
-          print(source, "       i > UNIT_%s;\n", id.c_str());
-          print(source, "       i--)\n");
-          print(source, "  { context[UNIT_%s + i] ="
-                        " context[UNIT_%s + i -1]; }\n",
-                id.c_str(), id.c_str());
+          // set output network
+          print(source, "  net_%s = context[UNIT_%s + %d];\n",
+                onid.c_str(), id.c_str(), value - 1);
+
+          // manage input
+          for (unsigned int i = value - 1; i > 0; i--)
+          { print(source, "  context[UNIT_%s + %d] = context[UNIT_%s + %d];\n",
+                  id.c_str(), i, id.c_str(), i - 1); }
           print(source, "  context[UNIT_%s] = net_%s;\n",
                 id.c_str(), inid.c_str()); }
+        // <---
+
+        // ---> function
         else if (unit_type == "function")
         { print(source, "  // not implemented yet\n"); }
+        // <---
+
+        // ---> code block
         else if (unit_type == "code block")
         { print(source, "  // not implemented yet\n"); }
+        // <---
       }
     }
     print(source, "}\n");
 
     PRINT("SOURCE:\n%s\n", source.c_str());
-    // <---
     // <---
   }
   // <---

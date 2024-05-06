@@ -1068,8 +1068,14 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "print context")
   { PRINT("Context:\n%s\n", context.serialize().c_str()); }
 
-  else if (cmd == "generate code") { bus(IM("generate code"));
-                                     bus(IM("screen update")); }
+  else if (cmd == "generate code")
+  { bus(IM("check circuit errors"));
+    bool fail = false;
+    if (context.ls(root/"network errors").size() ||
+        context.ls(root/"sequence errors").size()) { fail = true; }
+    if (!fail)
+    { bus(IM("generate code"));
+      bus(IM("screen update")); } }
 
   else if (cmd == "check circuit errors") { bus(IM("check circuit errors"));
                                             bus(IM("screen update")); }
