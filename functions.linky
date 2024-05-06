@@ -1,0 +1,242 @@
+(root) {
+    (inputs) {
+        (0) {
+            (x)<int>[1]
+            (y)<int>[2]
+            (name)<string>[I_0]
+            (point) {
+                (x)<int>[6]
+                (y)<int>[3]
+            }
+        }
+        (1) {
+            (x)<int>[1]
+            (y)<int>[6]
+            (name)<string>[I_1]
+            (point) {
+                (x)<int>[6]
+                (y)<int>[7]
+            }
+        }
+        (2) {
+            (x)<int>[1]
+            (y)<int>[10]
+            (name)<string>[I_2]
+            (point) {
+                (x)<int>[6]
+                (y)<int>[11]
+            }
+        }
+        (3) {
+            (x)<int>[1]
+            (y)<int>[14]
+            (name)<string>[I_3]
+            (point) {
+                (x)<int>[6]
+                (y)<int>[15]
+            }
+        }
+    }
+    (outputs) {
+        (0) {
+            (x)<int>[29]
+            (y)<int>[2]
+            (name)<string>[O_0]
+            (point) {
+                (x)<int>[30]
+                (y)<int>[3]
+            }
+        }
+        (1) {
+            (x)<int>[29]
+            (y)<int>[6]
+            (name)<string>[O_1]
+            (point) {
+                (x)<int>[30]
+                (y)<int>[7]
+            }
+        }
+        (2) {
+            (x)<int>[29]
+            (y)<int>[10]
+            (name)<string>[O_2]
+            (point) {
+                (x)<int>[30]
+                (y)<int>[11]
+            }
+        }
+        (3) {
+            (x)<int>[29]
+            (y)<int>[14]
+            (name)<string>[O_3]
+            (point) {
+                (x)<int>[30]
+                (y)<int>[15]
+            }
+        }
+    }
+    (units) {
+        (0) {
+            (x)<int>[9]
+            (y)<int>[2]
+            (type)<string>[function]
+            (function name)<string>[integrator]
+            (numerator poly)<string>[1;]
+            (denominator poly)<string>[1;-1;]
+            (inputs) {
+                (0) {
+                    (x)<int>[8]
+                    (y)<int>[3]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[23]
+                    (y)<int>[3]
+                }
+            }
+        }
+        (1) {
+            (x)<int>[9]
+            (y)<int>[6]
+            (type)<string>[function]
+            (function name)<string>[differentiator]
+            (numerator poly)<string>[1;-1;]
+            (denominator poly)<string>[1;]
+            (inputs) {
+                (0) {
+                    (x)<int>[8]
+                    (y)<int>[7]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[27]
+                    (y)<int>[7]
+                }
+            }
+        }
+        (2) {
+            (x)<int>[9]
+            (y)<int>[10]
+            (type)<string>[function]
+            (function name)<string>[delay]
+            (numerator poly)<string>[0;1;]
+            (denominator poly)<string>[1;]
+            (inputs) {
+                (0) {
+                    (x)<int>[8]
+                    (y)<int>[11]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[17]
+                    (y)<int>[11]
+                }
+            }
+        }
+        (3) {
+            (x)<int>[9]
+            (y)<int>[14]
+            (type)<string>[function]
+            (function name)<string>[coeff == 2]
+            (numerator poly)<string>[2;]
+            (denominator poly)<string>[1;]
+            (inputs) {
+                (0) {
+                    (x)<int>[8]
+                    (y)<int>[15]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[23]
+                    (y)<int>[15]
+                }
+            }
+        }
+    }
+    (wires) {
+        (0) {
+            (0) {
+                (x)<int>[6]
+                (y)<int>[3]
+            }
+            (1) {
+                (x)<int>[8]
+                (y)<int>[3]
+            }
+        }
+        (1) {
+            (0) {
+                (x)<int>[23]
+                (y)<int>[3]
+            }
+            (1) {
+                (x)<int>[30]
+                (y)<int>[3]
+            }
+        }
+        (2) {
+            (0) {
+                (x)<int>[6]
+                (y)<int>[7]
+            }
+            (1) {
+                (x)<int>[8]
+                (y)<int>[7]
+            }
+        }
+        (3) {
+            (0) {
+                (x)<int>[27]
+                (y)<int>[7]
+            }
+            (1) {
+                (x)<int>[30]
+                (y)<int>[7]
+            }
+        }
+        (4) {
+            (0) {
+                (x)<int>[6]
+                (y)<int>[11]
+            }
+            (1) {
+                (x)<int>[8]
+                (y)<int>[11]
+            }
+        }
+        (5) {
+            (0) {
+                (x)<int>[17]
+                (y)<int>[11]
+            }
+            (1) {
+                (x)<int>[30]
+                (y)<int>[11]
+            }
+        }
+        (6) {
+            (0) {
+                (x)<int>[6]
+                (y)<int>[15]
+            }
+            (1) {
+                (x)<int>[8]
+                (y)<int>[15]
+            }
+        }
+        (7) {
+            (0) {
+                (x)<int>[23]
+                (y)<int>[15]
+            }
+            (1) {
+                (x)<int>[30]
+                (y)<int>[15]
+            }
+        }
+    }
+}

@@ -183,16 +183,20 @@ void generator::handler(void* ctx, IM mess)
       else if (utype == "function")
       { std::string num_poly = circuit[root/"units"/unit/"numerator poly"];
         std::string den_poly = circuit[root/"units"/unit/"denominator poly"];
-        unsigned int num_count = 0;
-        unsigned int den_count = 0;
+        unsigned int num_count = 1;
+        unsigned int den_count = 1;
         for (char c : num_poly) { if (c == ';') { num_count++; } }
         for (char c : den_poly) { if (c == ';') { den_count++; } }
-        if (num_count)
-        { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-          context_size += num_count; }
-        if (den_count)
-        { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-          context_size += den_count; } }
+        print(header,  "#define UNIT_%s %d\n", unit.c_str(), context_size);
+        context_size += num_count;
+        context_size += den_count;
+        // if (num_count)
+        // { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+        //   context_size += num_count; }
+        // if (den_count)
+        // { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
+        //   context_size += den_count; }
+          }
       else if (utype == "code block")
       { unsigned int block_context_size
           = (int)circuit[root/"units"/unit/"context size"];
@@ -302,8 +306,74 @@ void generator::handler(void* ctx, IM mess)
         // <---
 
         // ---> function
+        //      sum[i = 0..n](k_xi * x[n - i]) - sum[j = 1..m](k_yj * y[m - j])
+        //  y = ---------------------------------------------------------------
+        //      k_y0
+        //  WARNING: this code is definitely needs to be debugged!
+        //           it's written just for the overview
         else if (unit_type == "function")
-        { print(source, "  // not implemented yet\n"); }
+        { // print(source, "  // not implemented yet\n");
+          std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
+          std::string num_poly = circuit[root/"units"/id/"numerator poly"];
+          std::string den_poly = circuit[root/"units"/id/"denominator poly"];
+          unsigned int num_count = 1;
+          unsigned int den_count = 1;
+          for (char c : num_poly) { if (c == ';') { num_count++; } }
+          for (char c : den_poly) { if (c == ';') { num_count++; } }
+          float num_coeffs[num_count];
+          float den_coeffs[den_count];
+          std::string coeff_str; unsigned int coeff_ctr = 0;
+          for (char c : num_poly)
+          { if (c == ';') { num_coeffs[coeff_ctr] = std::stof(coeff_str);
+                            coeff_str.clear(); coeff_ctr++; continue; }
+            coeff_str.push_back(c); }
+          coeff_str.clear(); coeff_ctr = 0;
+          for (char c : den_poly)
+          { if (c == ';') { den_coeffs[coeff_ctr] = std::stof(coeff_str);
+                            coeff_str.clear(); coeff_ctr++; continue; }
+            coeff_str.push_back(c); }
+          
+          // manage numerator delays
+          for (unsigned int i = 0; i < num_count; i++)
+          { print(source, "  context[UNIT_%s + %d] = context[UNIT_%s + %d];\n",
+                  id.c_str(), i, id.c_str(), i + 1); }
+          print(source, "  context[UNIT_%s] = net_%s;\n",
+                id.c_str(), inid.c_str());
+
+          // manage denominator delays
+          for (unsigned int i = 0; i < den_count - 1; i++)
+          { print(source, "  context[UNIT_%s + %d] = context[UNIT_%s + %d];\n",
+                  id.c_str(), num_count + i, id.c_str(), num_count + i + 1); }
+
+          // calculate output
+          print(source, "  context[UNIT_%s + %d] = 0.0;\n",
+                id.c_str(), num_count + den_count);
+          
+          // numerator sum
+          for (unsigned int i = 0; i < num_count; i++)
+          { print(source, "  context[UNIT_%s + %d] += "
+                          "%f * context[UNIT_%s + %d];\n",
+                  id.c_str(), num_count + den_count,
+                  num_coeffs[i],
+                  id.c_str(), num_count + i); }
+
+          // denominator sum
+          for (unsigned int i = 0; i < den_count; i++)
+          { print(source, "  context[UNIT_%s + %d] += "
+                          "%f * context[UNIT_%s + %d];\n",
+                  id.c_str(), num_count + den_count, 
+                  den_coeffs[i],
+                  id.c_str(), num_count + den_count + i); }
+
+          // finalizing last Y
+          print(source, "  context[UNIT_%s + %d] /= %f;\n",
+                id.c_str(), num_count + den_count, den_coeffs[den_count]);
+
+          // setting output
+          print(source, "  net_%s = contex[UNIT_%s + %d];\n",
+                 onid.c_str(), id.c_str(), num_count + den_count);
+        }
         // <---
 
         // ---> code block
