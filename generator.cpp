@@ -159,7 +159,7 @@ void generator::handler(void* ctx, IM mess)
             ((std::string)circuit[root/"inputs"/input/"name"]).c_str(),
             counter);
       counter++; }
-    print(header, "#define INPUTS_COUNT %d\n", counter);
+    print(header, "#define INPUTS_SIZE %d\n", counter);
 
     counter = 0;
     print(header, "\n// outputs\n");
@@ -168,7 +168,7 @@ void generator::handler(void* ctx, IM mess)
             ((std::string)circuit[root/"outputs"/output/"name"]).c_str(),
             counter);
       counter++; }
-    print(header, "#define OUTPUTS_COUNT %d\n", counter);
+    print(header, "#define OUTPUTS_SIZE %d\n", counter);
 
     print(header, "\n// context\n");
     unsigned int context_size = 0;
@@ -189,24 +189,24 @@ void generator::handler(void* ctx, IM mess)
         for (char c : den_poly) { if (c == ';') { den_count++; } }
         print(header,  "#define UNIT_%s %d\n", unit.c_str(), context_size);
         context_size += num_count;
-        context_size += den_count;
-        // if (num_count)
-        // { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-        //   context_size += num_count; }
-        // if (den_count)
-        // { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-        //   context_size += den_count; }
-          }
+        context_size += den_count; }
       else if (utype == "code block")
       { unsigned int block_context_size
           = (int)circuit[root/"units"/unit/"context size"];
+        unsigned int inputs_size
+          = circuit.ls(root/"units"/unit/"inputs").size();
+        unsigned int outputs_size
+          = circuit.ls(root/"units"/unit/"outputs").size();
         if (block_context_size)
         { print(header, "#define UNIT_%s %d\n", unit.c_str(), context_size);
-          print(header, "#define UNIT_%s_SIZE %d\n",
-                unit.c_str(), block_context_size);
-          context_size += block_context_size; } } }
+          context_size += inputs_size + outputs_size + block_context_size; }
+        std::string function_name = circuit[root/"units"/unit/"function name"];
+        print(header, "extern %s(float* inputs, "
+                                "float* outputs, "
+                                "float* context);\n",
+              function_name.c_str()); } }
 
-    print(header, "#define CONTEXT %d\n", context_size);
+    print(header, "#define CONTEXT_SIZE %d\n", context_size);
 
     print(header, "\nvoid function(float* inputs,"
                   " float* outputs, float* context);\n");
@@ -375,7 +375,30 @@ void generator::handler(void* ctx, IM mess)
 
         // ---> code block
         else if (unit_type == "code block")
-        { print(source, "  // not implemented yet\n"); }
+        { unsigned int inputs_size
+            = circuit.ls(root/"units"/id/"inputs").size();
+          unsigned int outputs_size
+            = circuit.ls(root/"units"/id/"outputs").size();
+          unsigned int counter = 0;
+          for (std::string input : circuit.ls(root/"units"/id/"inputs"))
+          { std::string inid = circuit[root/"units"/id/"inputs"/input/"net"];
+            print(source, "  context[UNIT_%s + %d] = net_%s;\n",
+                  id.c_str(), counter, inid.c_str());
+            counter++; }
+          std::string function_name = circuit[root/"units"/id/"function name"];
+          print(source, "  %s(&circuit[UNIT_%s + %d], "
+                             "&circuit[UNIT_%s + %d], "
+                             "&circuit[UNIT_%s + %d]);\n",
+                function_name.c_str(),
+                id.c_str(), 0,
+                id.c_str(), inputs_size,
+                id.c_str(), inputs_size + outputs_size);
+          counter = 0;
+          for (std::string output : circuit.ls(root/"units"/id/"outputs"))
+          { std::string onid = circuit[root/"units"/id/"outputs"/output/"net"];
+            print(source, "  net_%s = context[UNIT_%s + %d;\n",
+                  onid.c_str(), id.c_str(), inputs_size + counter);
+            counter++; } }
         // <---
       }
     }
