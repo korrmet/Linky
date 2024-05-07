@@ -1091,7 +1091,7 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
       if (path) { bus(IM("file save") << IV("path", path)); } }
     else
     { bus(IM("file save")
-          << IV("path", (std::string)params[root/"circuit file path"])); } }
+          << IV("path", (std::string)context[root/"circuit file path"])); } }
 
   else if (cmd == "save as")
   { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);

@@ -22,7 +22,11 @@ int main(int argc, char** argv)
   bus + generator::handler;
   PRINT("Linky v0\n");
   
-  if (argc > 1) { bus(IM("file open") << IV("name", argv[1])); }
+  if (argc > 1) { bus(IM("file open") << IV("path", argv[1])); }
+  if (argc > 2 && std::string("--generate") == argv[2])
+  { bus(IM("check circuit errors"));
+    bus(IM("generate code"));
+    return 0; }
 
   editor::window main_window;
   Fl::run(); return 0; }
@@ -34,15 +38,15 @@ void handler(void* ctx, IM mess)
   { std::ifstream file(mess["path"]);
     if (!file.is_open())
     { PRINT("Unable to open %s, skipping ...\n",
-            ((std::string)mess["name"]).c_str());
+            ((std::string)mess["path"]).c_str());
       return; }
     std::stringstream data; data << file.rdbuf(); file.close();
     circuit.parse(data.str());
-    params[root / "circuit file path"] = (std::string)mess["name"];
+    context[root / "circuit file path"] = (std::string)mess["path"];
     bus(IM("circuit file parsed")); }
 
   else if (mess == "file save")
-  { params[root / "circuit file path"] = (std::string)mess["path"];
+  { context[root / "circuit file path"] = (std::string)mess["path"];
     std::ofstream file(mess["path"]);
     if (!file.is_open())
     { PRINT("Can't save %s\n", ((std::string)mess["path"]).c_str());
