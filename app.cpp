@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "editor.hpp"
 #include "generator.hpp"
+#include "simulator.hpp"
 #include "independency.hpp"
 #include <FL/Fl.H>
 #include <fstream>
@@ -29,6 +30,8 @@ int main(int argc, char** argv)
     return 0; }
 
   editor::window main_window;
+  simulator::window sim;
+  sim.show();
   Fl::run(); return 0; }
 
 namespace app {
@@ -42,11 +45,11 @@ void handler(void* ctx, IM mess)
       return; }
     std::stringstream data; data << file.rdbuf(); file.close();
     circuit.parse(data.str());
-    context[root / "circuit file path"] = (std::string)mess["path"];
+    context[ROOT / "circuit file path"] = (std::string)mess["path"];
     bus(IM("circuit file parsed")); }
 
   else if (mess == "file save")
-  { context[root / "circuit file path"] = (std::string)mess["path"];
+  { context[ROOT / "circuit file path"] = (std::string)mess["path"];
     std::ofstream file(mess["path"]);
     if (!file.is_open())
     { PRINT("Can't save %s\n", ((std::string)mess["path"]).c_str());

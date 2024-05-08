@@ -148,7 +148,7 @@ void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
   { std::string header; std::string source;
-    std::string tmp = context[root/"circuit file path"];
+    std::string tmp = context[ROOT/"circuit file path"];
     std::string fname;
     for (char c : tmp) { if (c == '.') { break; } fname.push_back(c); }
     std::string header_name = fname; header_name.append(".h");
@@ -160,20 +160,20 @@ void generator::handler(void* ctx, IM mess)
 
     unsigned int counter = 0;
     print(header, "// inputs\n");
-    for (std::string input : circuit.ls(root/"inputs"))
+    for (std::string input : circuit.ls(ROOT/"inputs"))
     { print(header, "#define %s_%s %d\n",
             fname.c_str(),
-            ((std::string)circuit[root/"inputs"/input/"name"]).c_str(),
+            ((std::string)circuit[ROOT/"inputs"/input/"name"]).c_str(),
             counter);
       counter++; }
     print(header, "#define %s_inputs_size %d\n", fname.c_str(), counter);
 
     counter = 0;
     print(header, "\n// outputs\n");
-    for (std::string output : circuit.ls(root/"outputs"))
+    for (std::string output : circuit.ls(ROOT/"outputs"))
     { print(header, "#define %s_%s %d\n",
             fname.c_str(),
-            ((std::string)circuit[root/"outputs"/output/"name"]).c_str(),
+            ((std::string)circuit[ROOT/"outputs"/output/"name"]).c_str(),
             counter);
       counter++; }
     print(header, "#define %s_outputs_size %d\n", fname.c_str(), counter);
@@ -181,18 +181,18 @@ void generator::handler(void* ctx, IM mess)
     print(header, "\n// context\n");
     unsigned int context_size = 0;
     
-    for (std::string unit : circuit.ls(root/"units"))
-    { std::string utype = circuit[root/"units"/unit/"type"];
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { std::string utype = circuit[ROOT/"units"/unit/"type"];
       if (utype == "delay")
       { print(header, "#define %s_unit_%s %d\n",
               fname.c_str(), unit.c_str(), context_size);
-        int value = circuit[root/"units"/unit/"value"];
+        int value = circuit[ROOT/"units"/unit/"value"];
         print(header, "#define %s_unit_%s_SIZE %d\n",
               fname.c_str(), unit.c_str(), value);
         context_size += value; }
       else if (utype == "function")
-      { std::string num_poly = circuit[root/"units"/unit/"numerator poly"];
-        std::string den_poly = circuit[root/"units"/unit/"denominator poly"];
+      { std::string num_poly = circuit[ROOT/"units"/unit/"numerator poly"];
+        std::string den_poly = circuit[ROOT/"units"/unit/"denominator poly"];
         unsigned int num_count = 0;
         unsigned int den_count = 0;
         for (char c : num_poly) { if (c == ';') { num_count++; } }
@@ -203,16 +203,16 @@ void generator::handler(void* ctx, IM mess)
         context_size += den_count; }
       else if (utype == "code block")
       { unsigned int block_context_size
-          = (int)circuit[root/"units"/unit/"context size"];
+          = (int)circuit[ROOT/"units"/unit/"context size"];
         unsigned int inputs_size
-          = circuit.ls(root/"units"/unit/"inputs").size();
+          = circuit.ls(ROOT/"units"/unit/"inputs").size();
         unsigned int outputs_size
-          = circuit.ls(root/"units"/unit/"outputs").size();
+          = circuit.ls(ROOT/"units"/unit/"outputs").size();
         if (block_context_size)
         { print(header, "#define %s_unit_%s %d\n",
                 fname.c_str(), unit.c_str(), context_size);
           context_size += inputs_size + outputs_size + block_context_size; }
-        std::string function_name = circuit[root/"units"/unit/"function name"];
+        std::string function_name = circuit[ROOT/"units"/unit/"function name"];
         print(header, "extern void %s(float* inputs, "
                                 "float* outputs, "
                                 "float* context);\n",
@@ -232,9 +232,9 @@ void generator::handler(void* ctx, IM mess)
 
     // ---> source
     print(source, "#include \"%s.h\"\n", fname.c_str());
-    for (std::string unit : circuit.ls(root/"units"))
-    { if (circuit[root/"units"/unit/"type"] == "code block")
-      { std::string fname = circuit[root/"units"/unit/"function name"];
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { if (circuit[ROOT/"units"/unit/"type"] == "code block")
+      { std::string fname = circuit[ROOT/"units"/unit/"function name"];
         print(source,
               "extern void %s"
               "(float* inputs, float* outputs, float* context);\n",
@@ -243,34 +243,34 @@ void generator::handler(void* ctx, IM mess)
     print(source, "\nvoid %s(float* inputs, "
                   " float* outputs, float* context) {\n", fname.c_str());
     
-    for (std::string net : context.ls(root/"network"))
+    for (std::string net : context.ls(ROOT/"network"))
     { print(source, "  float net_%s = 0.0f;\n", net.c_str()); }
 
-    for (std::string step : context.ls(root/"sequence"))
-    { std::string type = context[root/"sequence"/step/"type"];
-      std::string id = context[root/"sequence"/step/"id"];
+    for (std::string step : context.ls(ROOT/"sequence"))
+    { std::string type = context[ROOT/"sequence"/step/"type"];
+      std::string id = context[ROOT/"sequence"/step/"id"];
       
       std::string unit_type;
       if (type == "input") { unit_type = "circuit input"; }
       else if (type == "output") { unit_type = "circuit output"; }
       else if (type == "unit")
-      { unit_type = (std::string)circuit[root/"units"/id/"type"]; }
+      { unit_type = (std::string)circuit[ROOT/"units"/id/"type"]; }
 
       print(source, "\n  // %s, %s (%s)\n",
             type.c_str(), unit_type.c_str(), id.c_str());
 
       // ---> input
       if (type == "input")
-      { std::string nid = circuit[root/"inputs"/id/"net"];
-        std::string iname = circuit[root/"inputs"/id/"name"];
+      { std::string nid = circuit[ROOT/"inputs"/id/"net"];
+        std::string iname = circuit[ROOT/"inputs"/id/"name"];
         print(source, "  net_%s = inputs[%s_%s];\n",
               nid.c_str(), fname.c_str(), iname.c_str()); }
       // <---
 
       // ---> output
       else if (type == "output")
-      { std::string nid = circuit[root/"outputs"/id/"net"];
-        std::string oname = circuit[root/"outputs"/id/"name"];
+      { std::string nid = circuit[ROOT/"outputs"/id/"net"];
+        std::string oname = circuit[ROOT/"outputs"/id/"name"];
         print(source, "  outputs[%s_%s] = net_%s;\n",
               fname.c_str(), oname.c_str(), nid.c_str()); }
       // <---
@@ -278,34 +278,34 @@ void generator::handler(void* ctx, IM mess)
       else if (type == "unit")
       { // ---> constant
         if (unit_type == "constant")
-        { std::string nid = circuit[root/"units"/id/"outputs"/0/"net"];
-          float value = circuit[root/"units"/id/"value"];
+        { std::string nid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          float value = circuit[ROOT/"units"/id/"value"];
           print(source, "  net_%s = %f;\n", nid.c_str(), value); }
         // <---
         
         // ---> sum
         else if (unit_type == "sum")
-        { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
-          std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
-          std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
           print(source, "  net_%s = net_%s + net_%s;\n",
                 onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
         // <---
 
         // ---> product
         else if (unit_type == "product")
-        { std::string onid  = circuit[root/"units"/id/"outputs"/0/"net"];
-          std::string i0nid = circuit[root/"units"/id/"inputs"/0/"net"];
-          std::string i1nid = circuit[root/"units"/id/"inputs"/1/"net"];
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
           print(source, "  net_%s = net_%s * net_%s;\n",
                 onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
         // <---
 
         // ---> delay
         else if (unit_type == "delay")
-        { std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
-          std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
-          int value = circuit[root/"units"/id/"value"];
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int value = circuit[ROOT/"units"/id/"value"];
 
           // set output network
           print(source, "  net_%s = context[%s_unit_%s + %d];\n",
@@ -328,10 +328,10 @@ void generator::handler(void* ctx, IM mess)
         //  WARNING: this code is definitely needs to be debugged!
         //           it's written just for the overview
         else if (unit_type == "function")
-        { std::string onid = circuit[root/"units"/id/"outputs"/0/"net"];
-          std::string inid = circuit[root/"units"/id/"inputs"/0/"net"];
-          std::string num_poly = circuit[root/"units"/id/"numerator poly"];
-          std::string den_poly = circuit[root/"units"/id/"denominator poly"];
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string num_poly = circuit[ROOT/"units"/id/"numerator poly"];
+          std::string den_poly = circuit[ROOT/"units"/id/"denominator poly"];
           int num_count = 0;
           int den_count = 0;
           for (char c : num_poly) { if (c == ';') { num_count++; } }
@@ -400,16 +400,16 @@ void generator::handler(void* ctx, IM mess)
         // ---> code block
         else if (unit_type == "code block")
         { unsigned int inputs_size
-            = circuit.ls(root/"units"/id/"inputs").size();
+            = circuit.ls(ROOT/"units"/id/"inputs").size();
           unsigned int outputs_size
-            = circuit.ls(root/"units"/id/"outputs").size();
+            = circuit.ls(ROOT/"units"/id/"outputs").size();
           unsigned int counter = 0;
-          for (std::string input : circuit.ls(root/"units"/id/"inputs"))
-          { std::string inid = circuit[root/"units"/id/"inputs"/input/"net"];
+          for (std::string input : circuit.ls(ROOT/"units"/id/"inputs"))
+          { std::string inid = circuit[ROOT/"units"/id/"inputs"/input/"net"];
             print(source, "  context[%s_unit_%s + %d] = net_%s;\n",
                   fname.c_str(), id.c_str(), counter, inid.c_str());
             counter++; }
-          std::string function_name = circuit[root/"units"/id/"function name"];
+          std::string function_name = circuit[ROOT/"units"/id/"function name"];
           print(source, "  %s(&context[%s_unit_%s + %d], "
                              "&context[%s_unit_%s + %d], "
                              "&context[%s_unit_%s + %d]);\n",
@@ -418,8 +418,8 @@ void generator::handler(void* ctx, IM mess)
                 fname.c_str(), id.c_str(), inputs_size,
                 fname.c_str(), id.c_str(), inputs_size + outputs_size);
           counter = 0;
-          for (std::string output : circuit.ls(root/"units"/id/"outputs"))
-          { std::string onid = circuit[root/"units"/id/"outputs"/output/"net"];
+          for (std::string output : circuit.ls(ROOT/"units"/id/"outputs"))
+          { std::string onid = circuit[ROOT/"units"/id/"outputs"/output/"net"];
             print(source, "  net_%s = context[%s_unit_%s + %d];\n",
                   onid.c_str(), fname.c_str(), id.c_str(),
                   inputs_size + counter);
@@ -438,8 +438,8 @@ void generator::handler(void* ctx, IM mess)
 
   // ---> check circuit errors
   else if (mess == "check circuit errors")
-  { context.del(root/"network");
-    context.del(root/"network errors");
+  { context.del(ROOT/"network");
+    context.del(ROOT/"network errors");
     bus(IM("make network"));
     bus(IM("scan network"));
     bus(IM("check network"));
@@ -449,7 +449,7 @@ void generator::handler(void* ctx, IM mess)
   
   // ---> make network
   else if (mess == "make network")
-  { std::list<std::string> wires = circuit.ls(root/"wires");
+  { std::list<std::string> wires = circuit.ls(ROOT/"wires");
     while (wires.size())
     { std::list<std::string> net;
 
@@ -459,86 +459,86 @@ void generator::handler(void* ctx, IM mess)
       { added = false;
         for (std::string nw : net)
         { for (std::string w : wires)
-          { if ( ( circuit[root/"wires"/w /0/"x"] ==
-                   circuit[root/"wires"/nw/0/"x"] &&
-                   circuit[root/"wires"/w /0/"y"] ==
-                   circuit[root/"wires"/nw/0/"y"])
+          { if ( ( circuit[ROOT/"wires"/w /0/"x"] ==
+                   circuit[ROOT/"wires"/nw/0/"x"] &&
+                   circuit[ROOT/"wires"/w /0/"y"] ==
+                   circuit[ROOT/"wires"/nw/0/"y"])
                  ||
-                 ( circuit[root/"wires"/w /0/"x"] ==
-                   circuit[root/"wires"/nw/1/"x"] &&
-                   circuit[root/"wires"/w /0/"y"] ==
-                   circuit[root/"wires"/nw/1/"y"])
+                 ( circuit[ROOT/"wires"/w /0/"x"] ==
+                   circuit[ROOT/"wires"/nw/1/"x"] &&
+                   circuit[ROOT/"wires"/w /0/"y"] ==
+                   circuit[ROOT/"wires"/nw/1/"y"])
                  ||
-                 ( circuit[root/"wires"/w /1/"x"] ==
-                   circuit[root/"wires"/nw/0/"x"] &&
-                   circuit[root/"wires"/w /1/"y"] ==
-                   circuit[root/"wires"/nw/0/"y"])
+                 ( circuit[ROOT/"wires"/w /1/"x"] ==
+                   circuit[ROOT/"wires"/nw/0/"x"] &&
+                   circuit[ROOT/"wires"/w /1/"y"] ==
+                   circuit[ROOT/"wires"/nw/0/"y"])
                  ||
-                 ( circuit[root/"wires"/w /1/"x"] ==
-                   circuit[root/"wires"/nw/1/"x"] &&
-                   circuit[root/"wires"/w /1/"y"] ==
-                   circuit[root/"wires"/nw/1/"y"]))
+                 ( circuit[ROOT/"wires"/w /1/"x"] ==
+                   circuit[ROOT/"wires"/nw/1/"x"] &&
+                   circuit[ROOT/"wires"/w /1/"y"] ==
+                   circuit[ROOT/"wires"/nw/1/"y"]))
             { net.push_back(w); wires.remove(w); added = true; break; } }
           if (added) { break; } }
       } while (added);
 
-      std::list<std::string> nets = context.ls(root/"network");
+      std::list<std::string> nets = context.ls(ROOT/"network");
       int idx = nets.size() ? std::stoi(nets.back()) + 1 : 0;
       for (std::string nwire : net)
-      { context[root/"network"/idx/"wires"/nwire]; } } }
+      { context[ROOT/"network"/idx/"wires"/nwire]; } } }
   // <---
 
   // ---> scan network
   else if (mess == "scan network")
   { struct point { int x; int y; };
-    for (std::string net : context.ls(root/"network"))
+    for (std::string net : context.ls(ROOT/"network"))
     { // ---> generating list of points
       std::list<point> points;
-      for (std::string wire : context.ls(root/"network"/net/"wires"))
+      for (std::string wire : context.ls(ROOT/"network"/net/"wires"))
       { point p;
-        p.x = (int)circuit[root/"wires"/wire/0/"x"];
-        p.y = (int)circuit[root/"wires"/wire/0/"y"];
+        p.x = (int)circuit[ROOT/"wires"/wire/0/"x"];
+        p.y = (int)circuit[ROOT/"wires"/wire/0/"y"];
         points.push_back(p);
-        p.x = (int)circuit[root/"wires"/wire/1/"x"];
-        p.y = (int)circuit[root/"wires"/wire/1/"y"];
+        p.x = (int)circuit[ROOT/"wires"/wire/1/"x"];
+        p.y = (int)circuit[ROOT/"wires"/wire/1/"y"];
         points.push_back(p); }
       // <---
 
       // ---> scanning circuit inputs
-      for (std::string input : circuit.ls(root/"inputs"))
+      for (std::string input : circuit.ls(ROOT/"inputs"))
       { for (point p : points)
-        { if (p.x == (int)circuit[root/"inputs"/input/"point"/"x"] &&
-              p.y == (int)circuit[root/"inputs"/input/"point"/"y"])
-          { context[root/"network"/net/"inputs"/input];
-            circuit[root/"inputs"/input/"net"] = net;
+        { if (p.x == (int)circuit[ROOT/"inputs"/input/"point"/"x"] &&
+              p.y == (int)circuit[ROOT/"inputs"/input/"point"/"y"])
+          { context[ROOT/"network"/net/"inputs"/input];
+            circuit[ROOT/"inputs"/input/"net"] = net;
             break; } } }
       // <---
 
       // ---> scanning circuit outputs
-      for (std::string output : circuit.ls(root/"outputs"))
+      for (std::string output : circuit.ls(ROOT/"outputs"))
       { for (point p : points)
-        { if (p.x == (int)circuit[root/"outputs"/output/"point"/"x"] &&
-              p.y == (int)circuit[root/"outputs"/output/"point"/"y"])
-          { context[root/"network"/net/"outputs"/output];
-            circuit[root/"outputs"/output/"net"] = net;
+        { if (p.x == (int)circuit[ROOT/"outputs"/output/"point"/"x"] &&
+              p.y == (int)circuit[ROOT/"outputs"/output/"point"/"y"])
+          { context[ROOT/"network"/net/"outputs"/output];
+            circuit[ROOT/"outputs"/output/"net"] = net;
             break; } } }
       // <---
 
       // ---> scanning units
-      for (std::string unit : circuit.ls(root/"units"))
-      { for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
+      for (std::string unit : circuit.ls(ROOT/"units"))
+      { for (std::string input : circuit.ls(ROOT/"units"/unit/"inputs"))
         { for (point p : points)
-          { if (p.x == (int)circuit[root/"units"/unit/"inputs"/input/"x"] &&
-                p.y == (int)circuit[root/"units"/unit/"inputs"/input/"y"])
-            { context[root/"network"/net/"units"/unit/"inputs"/input];
-              circuit[root/"units"/unit/"inputs"/input/"net"] = net; } } }
+          { if (p.x == (int)circuit[ROOT/"units"/unit/"inputs"/input/"x"] &&
+                p.y == (int)circuit[ROOT/"units"/unit/"inputs"/input/"y"])
+            { context[ROOT/"network"/net/"units"/unit/"inputs"/input];
+              circuit[ROOT/"units"/unit/"inputs"/input/"net"] = net; } } }
 
-        for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+        for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
         { for (point p : points)
-          { if (p.x == (int)circuit[root/"units"/unit/"outputs"/output/"x"] &&
-                p.y == (int)circuit[root/"units"/unit/"outputs"/output/"y"])
-            { context[root/"network"/net/"units"/unit/"outputs"/output];
-              circuit[root/"units"/unit/"outputs"/output/"net"] = net; } } } }
+          { if (p.x == (int)circuit[ROOT/"units"/unit/"outputs"/output/"x"] &&
+                p.y == (int)circuit[ROOT/"units"/unit/"outputs"/output/"y"])
+            { context[ROOT/"network"/net/"units"/unit/"outputs"/output];
+              circuit[ROOT/"units"/unit/"outputs"/output/"net"] = net; } } } }
       // <---
     } }
   // <---
@@ -549,44 +549,44 @@ void generator::handler(void* ctx, IM mess)
   // circuit's point of view it's a source of the signals, and circuit
   // outputs are logical inputs because it's a data consumer.
   if (mess == "check network")
-  { for (std::string net : context.ls(root/"network"))
+  { for (std::string net : context.ls(ROOT/"network"))
     { int logical_out_count = 0;
-      logical_out_count += context.ls(root/"network"/net/"inputs").size();
-      for (std::string unit : context.ls(root/"network"/net/"units"))
+      logical_out_count += context.ls(ROOT/"network"/net/"inputs").size();
+      for (std::string unit : context.ls(ROOT/"network"/net/"units"))
       { logical_out_count
-          += context.ls(root/"network"/net/"units"/unit/"outputs").size(); }
+          += context.ls(ROOT/"network"/net/"units"/unit/"outputs").size(); }
       if (logical_out_count != 1)
-      { context[root/"network errors"/net]; continue; }
+      { context[ROOT/"network errors"/net]; continue; }
     
       int logical_in_count = 0;
-      logical_in_count += context.ls(root/"network"/net/"outputs").size(); 
-      for (std::string unit : context.ls(root/"network"/net/"units"))
+      logical_in_count += context.ls(ROOT/"network"/net/"outputs").size(); 
+      for (std::string unit : context.ls(ROOT/"network"/net/"units"))
       { logical_in_count
-          += context.ls(root/"network"/net/"units"/unit/"inputs").size(); }
+          += context.ls(ROOT/"network"/net/"units"/unit/"inputs").size(); }
       if (logical_in_count == 0)
-      { context[root/"network errors"/net]; continue; } } }
+      { context[ROOT/"network errors"/net]; continue; } } }
   // <---
 
   // ---> make sequence
   else if (mess == "make sequence")
   { // ---> prepare for calculations
-    context.del(root/"sequence");
-    for (std::string unit : circuit.ls(root/"units"))
-    { if (circuit[root/"units"/unit/"type"] == "function")
-      { for (std::string k : circuit.ls(root/"units"/unit/"numerator poly"))
-        { circuit.del(root/"units"/unit/"numerator poly"/k); }
-        for (std::string k : circuit.ls(root/"units"/unit/"denominator poly"))
-        { circuit.del(root/"units"/unit/"denominator poly"/k); } } }
+    context.del(ROOT/"sequence");
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { if (circuit[ROOT/"units"/unit/"type"] == "function")
+      { for (std::string k : circuit.ls(ROOT/"units"/unit/"numerator poly"))
+        { circuit.del(ROOT/"units"/unit/"numerator poly"/k); }
+        for (std::string k : circuit.ls(ROOT/"units"/unit/"denominator poly"))
+        { circuit.del(ROOT/"units"/unit/"denominator poly"/k); } } }
     // <---
 
     // ---> expand functions polynoms
-    for (std::string unit : circuit.ls(root/"units"))
-    { if (circuit[root/"units"/unit/"type"] == "function")
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { if (circuit[ROOT/"units"/unit/"type"] == "function")
       { std::list<float> polynom;
         int counter = 0;
         std::string current;
-        std::string numerator = circuit[root/"units"/unit/"numerator poly"];
-        std::string denominator = circuit[root/"units"/unit/"denominator poly"];
+        std::string numerator = circuit[ROOT/"units"/unit/"numerator poly"];
+        std::string denominator = circuit[ROOT/"units"/unit/"denominator poly"];
 
         for (char c : numerator)
         { if (c == ';') { polynom.push_back(std::stof(current));
@@ -594,7 +594,7 @@ void generator::handler(void* ctx, IM mess)
           current.push_back(c); }
 
         for (float v : polynom)
-        { circuit[root/"units"/unit/"numerator poly"/counter] = v; counter++; }
+        { circuit[ROOT/"units"/unit/"numerator poly"/counter] = v; counter++; }
         polynom.clear();
         current.clear();
 
@@ -604,86 +604,86 @@ void generator::handler(void* ctx, IM mess)
           current.push_back(c); }
 
         for (float v : polynom)
-        { circuit[root/"units"/unit/"denominator poly"/counter] = v;
+        { circuit[ROOT/"units"/unit/"denominator poly"/counter] = v;
           counter++; } } }
     // <---
     
     // ---> numerate all of the entities to correctly insert it to the
     //      calculator
     unsigned int counter = 0;
-    for (std::string input : circuit.ls(root/"inputs"))
-    { circuit[root/"inputs"/input] = std::to_string(counter); counter++;
-      circuit[root/"inputs"/input/"vout"] = std::to_string(counter);
+    for (std::string input : circuit.ls(ROOT/"inputs"))
+    { circuit[ROOT/"inputs"/input] = std::to_string(counter); counter++;
+      circuit[ROOT/"inputs"/input/"vout"] = std::to_string(counter);
       counter++; }
 
-    for (std::string output : circuit.ls(root/"outputs"))
-    { circuit[root/"outputs"/output] = std::to_string(counter); counter++;
-      circuit[root/"outputs"/output/"vin"] = std::to_string(counter);
+    for (std::string output : circuit.ls(ROOT/"outputs"))
+    { circuit[ROOT/"outputs"/output] = std::to_string(counter); counter++;
+      circuit[ROOT/"outputs"/output/"vin"] = std::to_string(counter);
       counter++; }
 
-    for (std::string unit : circuit.ls(root/"units"))
-    { circuit[root/"units"/unit] = std::to_string(counter); counter++;
-      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
-      { circuit[root/"units"/unit/"inputs"/input] = std::to_string(counter);
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { circuit[ROOT/"units"/unit] = std::to_string(counter); counter++;
+      for (std::string input : circuit.ls(ROOT/"units"/unit/"inputs"))
+      { circuit[ROOT/"units"/unit/"inputs"/input] = std::to_string(counter);
         counter++; }
-      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
-      { circuit[root/"units"/unit/"outputs"/output] = std::to_string(counter);
+      for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
+      { circuit[ROOT/"units"/unit/"outputs"/output] = std::to_string(counter);
         counter++; } }
 
-    for (std::string net : context.ls(root/"network"))
-    { context[root/"network"/net] = std::to_string(counter); counter++; }
+    for (std::string net : context.ls(ROOT/"network"))
+    { context[ROOT/"network"/net] = std::to_string(counter); counter++; }
     // <---
 
     // ---> insert all of the units and nets to the calculator
     circuit_calculator c;
-    for (std::string input : circuit.ls(root/"inputs"))
-    { c.u((std::string)circuit[root/"inputs"/input])
-       .o((std::string)circuit[root/"inputs"/input/"vout"], true); }
+    for (std::string input : circuit.ls(ROOT/"inputs"))
+    { c.u((std::string)circuit[ROOT/"inputs"/input])
+       .o((std::string)circuit[ROOT/"inputs"/input/"vout"], true); }
 
-    for (std::string output : circuit.ls(root/"outputs"))
-    { c.u((std::string)circuit[root/"outputs"/output])
-       .i((std::string)circuit[root/"outputs"/output/"vin"]); }
+    for (std::string output : circuit.ls(ROOT/"outputs"))
+    { c.u((std::string)circuit[ROOT/"outputs"/output])
+       .i((std::string)circuit[ROOT/"outputs"/output/"vin"]); }
 
-    for (std::string unit : circuit.ls(root/"units"))
-    { c.u((std::string)circuit[root/"units"/unit]);
-      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
-      { c.i((std::string)circuit[root/"units"/unit/"inputs"/input]); }
-      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { c.u((std::string)circuit[ROOT/"units"/unit]);
+      for (std::string input : circuit.ls(ROOT/"units"/unit/"inputs"))
+      { c.i((std::string)circuit[ROOT/"units"/unit/"inputs"/input]); }
+      for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
       { bool active = false;
-        if (circuit[root/"units"/unit/"type"] == "constant") { active = true; }
-        if (circuit[root/"units"/unit/"type"] == "delay")    { active = true; }
-        if (circuit[root/"units"/unit/"type"] == "function" &&
-            !!circuit(root/"units"/unit/"numerator poly"/0) &&
-            circuit[root/"units"/unit/"numerator poly"/0] == 0)
+        if (circuit[ROOT/"units"/unit/"type"] == "constant") { active = true; }
+        if (circuit[ROOT/"units"/unit/"type"] == "delay")    { active = true; }
+        if (circuit[ROOT/"units"/unit/"type"] == "function" &&
+            !!circuit(ROOT/"units"/unit/"numerator poly"/0) &&
+            circuit[ROOT/"units"/unit/"numerator poly"/0] == 0)
                                                              { active = true; }
-        c.o((std::string)circuit[root/"units"/unit/"outputs"/output],
+        c.o((std::string)circuit[ROOT/"units"/unit/"outputs"/output],
             active); } }
 
-    for (std::string net : context.ls(root/"network"))
-    { std::string nid = (std::string)context[root/"network"/net];
-      for (std::string input : context.ls(root/"network"/net/"inputs"))
-      { std::string uid = (std::string)circuit[root/"inputs"/input];
-        std::string pid = (std::string)circuit[root/"inputs"/input/"vout"];
+    for (std::string net : context.ls(ROOT/"network"))
+    { std::string nid = (std::string)context[ROOT/"network"/net];
+      for (std::string input : context.ls(ROOT/"network"/net/"inputs"))
+      { std::string uid = (std::string)circuit[ROOT/"inputs"/input];
+        std::string pid = (std::string)circuit[ROOT/"inputs"/input/"vout"];
         c.connect(uid, pid, nid); }
 
-      for (std::string output : context.ls(root/"network"/net/"outputs"))
-      { std::string uid = (std::string)circuit[root/"outputs"/output];
-        std::string pid = (std::string)circuit[root/"outputs"/output/"vin"];
+      for (std::string output : context.ls(ROOT/"network"/net/"outputs"))
+      { std::string uid = (std::string)circuit[ROOT/"outputs"/output];
+        std::string pid = (std::string)circuit[ROOT/"outputs"/output/"vin"];
         c.connect(uid, pid, nid); }
 
-      for (std::string unit : context.ls(root/"network"/net/"units"))
-      { std::string uid = (std::string)circuit[root/"units"/unit];
+      for (std::string unit : context.ls(ROOT/"network"/net/"units"))
+      { std::string uid = (std::string)circuit[ROOT/"units"/unit];
 
         for (std::string input :
-             context.ls(root/"network"/net/"units"/unit/"inputs"))
+             context.ls(ROOT/"network"/net/"units"/unit/"inputs"))
         { std::string pid
-            = (std::string)circuit[root/"units"/unit/"inputs"/input];
+            = (std::string)circuit[ROOT/"units"/unit/"inputs"/input];
           c.connect(uid, pid, nid); }
 
         for (std::string output :
-             context.ls(root/"network"/net/"units"/unit/"outputs"))
+             context.ls(ROOT/"network"/net/"units"/unit/"outputs"))
         { std::string pid
-            = (std::string)circuit[root/"units"/unit/"outputs"/output];
+            = (std::string)circuit[ROOT/"units"/unit/"outputs"/output];
           c.connect(uid, pid, nid); } } }
     // <---
 
@@ -692,26 +692,26 @@ void generator::handler(void* ctx, IM mess)
     c.schedule(sequence);
 
     for (std::string item : sequence)
-    { context[root/"sequence"/item];
+    { context[ROOT/"sequence"/item];
       bool found = false;
-      for (std::string input : circuit.ls(root/"inputs"))
-      { if (circuit[root/"inputs"/input] == item)
-        { context[root/"sequence"/item/"type"] = "input";
-          context[root/"sequence"/item/"id"] = input;
+      for (std::string input : circuit.ls(ROOT/"inputs"))
+      { if (circuit[ROOT/"inputs"/input] == item)
+        { context[ROOT/"sequence"/item/"type"] = "input";
+          context[ROOT/"sequence"/item/"id"] = input;
           found = true; break; } }
       if (found) { continue; }
 
-      for (std::string output : circuit.ls(root/"outputs"))
-      { if (circuit[root/"outputs"/output] == item)
-        { context[root/"sequence"/item/"type"] = "output";
-          context[root/"sequence"/item/"id"] = output;
+      for (std::string output : circuit.ls(ROOT/"outputs"))
+      { if (circuit[ROOT/"outputs"/output] == item)
+        { context[ROOT/"sequence"/item/"type"] = "output";
+          context[ROOT/"sequence"/item/"id"] = output;
           found = true; break; } }
       if (found) { continue; }
 
-      for (std::string unit : circuit.ls(root/"units"))
-      { if (circuit[root/"units"/unit] == item)
-        { context[root/"sequence"/item/"type"] = "unit";
-          context[root/"sequence"/item/"id"] = unit;
+      for (std::string unit : circuit.ls(ROOT/"units"))
+      { if (circuit[ROOT/"units"/unit] == item)
+        { context[ROOT/"sequence"/item/"type"] = "unit";
+          context[ROOT/"sequence"/item/"id"] = unit;
           found = true; break; } }
       if (found) { continue; } }
     // <---
@@ -720,30 +720,30 @@ void generator::handler(void* ctx, IM mess)
 
   // ---> check sequence
   else if (mess == "check sequence")
-  { context.del(root/"sequence errors");
+  { context.del(ROOT/"sequence errors");
     unsigned int counter = 0;
-    for (std::string input : circuit.ls(root/"inputs"))
-    { context[root/"sequence errors"/counter/"type"] = "input";
-      context[root/"sequence errors"/counter/"id"] = input;
+    for (std::string input : circuit.ls(ROOT/"inputs"))
+    { context[ROOT/"sequence errors"/counter/"type"] = "input";
+      context[ROOT/"sequence errors"/counter/"id"] = input;
       counter++; }
 
-    for (std::string output : circuit.ls(root/"outputs"))
-    { context[root/"sequence errors"/counter/"type"] = "output";
-      context[root/"sequence errors"/counter/"id"] = output;
+    for (std::string output : circuit.ls(ROOT/"outputs"))
+    { context[ROOT/"sequence errors"/counter/"type"] = "output";
+      context[ROOT/"sequence errors"/counter/"id"] = output;
       counter++; }
 
-    for (std::string unit : circuit.ls(root/"units"))
-    { context[root/"sequence errors"/counter/"type"] = "unit";
-      context[root/"sequence errors"/counter/"id"] = unit;
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { context[ROOT/"sequence errors"/counter/"type"] = "unit";
+      context[ROOT/"sequence errors"/counter/"id"] = unit;
       counter++; } }
 
-  for (std::string item : context.ls(root/"sequence"))
-  { for (std::string error : context.ls(root/"sequence errors"))
-    { if (context[root/"sequence"/item/"type"] ==
-          context[root/"sequence errors"/error/"type"]
+  for (std::string item : context.ls(ROOT/"sequence"))
+  { for (std::string error : context.ls(ROOT/"sequence errors"))
+    { if (context[ROOT/"sequence"/item/"type"] ==
+          context[ROOT/"sequence errors"/error/"type"]
           &&
-          context[root/"sequence"/item/"id"] == 
-          context[root/"sequence errors"/error/"id"])
-      { context.del(root/"sequence errors"/error); break; } } }
+          context[ROOT/"sequence"/item/"id"] == 
+          context[ROOT/"sequence errors"/error/"id"])
+      { context.del(ROOT/"sequence errors"/error); break; } } }
   // <---
 }

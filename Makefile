@@ -8,7 +8,7 @@ run: build
 	./linky
 
 build: clean
-	g++ app.cpp editor.cpp generator.cpp -o linky $(FLAGS) -g3 -ggdb
+	g++ app.cpp editor.cpp generator.cpp simulator.cpp -o linky $(FLAGS) -g3 -ggdb
 
 clean:
 	rm -rf linky

@@ -30,12 +30,12 @@ class inputEditWindow : public Fl_Window
     input_name(name)
   { save_btn.callback(save_cb, (void*)this);
     name_input.value(((std::string)
-                      circuit[root/"inputs"/name/"name"]).c_str());
+                      circuit[ROOT/"inputs"/name/"name"]).c_str());
     set_modal(); show(); }
   
   static void save_cb(Fl_Widget* w, void* arg)
   { inputEditWindow* that = (inputEditWindow*)arg;
-    circuit[root/"inputs"/that->input_name/"name"] = that->name_input.value();
+    circuit[ROOT/"inputs"/that->input_name/"name"] = that->name_input.value();
     bus(IM("screen update")); that->hide(); }
   
   Fl_Input    name_input;
@@ -55,12 +55,12 @@ class outputEditWindow : public Fl_Window
     output_name(name)
   { save_btn.callback(save_cb, (void*)this);
     name_input.value(((std::string)
-                      circuit[root/"outputs"/name/"name"]).c_str());
+                      circuit[ROOT/"outputs"/name/"name"]).c_str());
     set_modal(); show(); }
   
   static void save_cb(Fl_Widget* w, void* arg)
   { outputEditWindow* that = (outputEditWindow*)arg;
-    circuit[root/"outputs"/that->output_name/"name"] = that->name_input.value();
+    circuit[ROOT/"outputs"/that->output_name/"name"] = that->name_input.value();
     bus(IM("screen update")); that->hide(); }
   
   Fl_Input    name_input;
@@ -79,12 +79,12 @@ class constEditWindow : public Fl_Window
     save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
     unit_name(name)
   { save_btn.callback(save_cb, (void*)this);
-    value_input.value((float)circuit[root/"units"/name/"value"]);
+    value_input.value((float)circuit[ROOT/"units"/name/"value"]);
     set_modal(); show(); }
 
   static void save_cb(Fl_Widget* w, void* arg)
   { constEditWindow* that = (constEditWindow*)arg;
-    circuit[root/"units"/that->unit_name/"value"]
+    circuit[ROOT/"units"/that->unit_name/"value"]
       = (float)that->value_input.value();
     bus(IM("screen update")); that->hide(); }
 
@@ -105,12 +105,12 @@ class delayEditWindow : public Fl_Window
     unit_name(name)
   { save_btn.callback(save_cb, (void*)this);
     value_input.step(1);
-    value_input.value((int)circuit[root/"units"/name/"value"]);
+    value_input.value((int)circuit[ROOT/"units"/name/"value"]);
     set_modal(); show(); }
   
   static void save_cb(Fl_Widget* w, void* arg)
   { delayEditWindow* that = (delayEditWindow*)arg;
-    circuit[root/"units"/that->unit_name/"value"]
+    circuit[ROOT/"units"/that->unit_name/"value"]
       = (int)that->value_input.value();
     bus(IM("screen update")); that->hide(); }
 
@@ -135,23 +135,23 @@ class functionEditWindow : public Fl_Window
     unit_name(name)
   { save_btn.callback(save_cb, (void*)this);
     function_name_input.value(((std::string)
-                               circuit[root/"units"/name/"function name"]
+                               circuit[ROOT/"units"/name/"function name"]
                               ).c_str());
     numerator_input.value(((std::string)
-                           circuit[root/"units"/name/"numerator poly"]
+                           circuit[ROOT/"units"/name/"numerator poly"]
                           ).c_str());
     denominator_input.value(((std::string)
-                             circuit[root/"units"/name/"denominator poly"]
+                             circuit[ROOT/"units"/name/"denominator poly"]
                             ).c_str());
     set_modal(); show(); }
 
   static void save_cb(Fl_Widget* w, void* arg)
   { functionEditWindow* that = (functionEditWindow*)arg;
-    circuit[root/"units"/that->unit_name/"function name"]
+    circuit[ROOT/"units"/that->unit_name/"function name"]
       = that->function_name_input.value();
-    circuit[root/"units"/that->unit_name/"numerator poly"]
+    circuit[ROOT/"units"/that->unit_name/"numerator poly"]
       = that->numerator_input.value();
-    circuit[root/"units"/that->unit_name/"denominator poly"]
+    circuit[ROOT/"units"/that->unit_name/"denominator poly"]
       = that->denominator_input.value();
     bus(IM("screen update")); that->hide(); }
 
@@ -184,32 +184,32 @@ class codeEditWindow : public Fl_Window
     unit_name(name)
   { save_btn.callback(save_cb, (void*)this);
     file_name_input.value(((std::string)
-                           circuit[root/"units"/name/"source file"]
+                           circuit[ROOT/"units"/name/"source file"]
                           ).c_str());
     function_name_input.value(((std::string)
-                               circuit[root/"units"/name/"function name"]
+                               circuit[ROOT/"units"/name/"function name"]
                               ).c_str());
     inputs_list_input.value(((std::string)
-                             circuit[root/"units"/name/"inputs names"]
+                             circuit[ROOT/"units"/name/"inputs names"]
                             ).c_str());
     outputs_list_input.value(((std::string)
-                              circuit[root/"units"/name/"outputs names"]
+                              circuit[ROOT/"units"/name/"outputs names"]
                              ).c_str());
     context_size_input.step(1);
-    context_size_input.value((int)circuit[root/"units"/name/"context size"]);
+    context_size_input.value((int)circuit[ROOT/"units"/name/"context size"]);
     set_modal(); show(); }
 
   static void save_cb(Fl_Widget* w, void* arg)
   { codeEditWindow* that = (codeEditWindow*)arg;
-    circuit[root/"units"/that->unit_name/"source file"]
+    circuit[ROOT/"units"/that->unit_name/"source file"]
       = that->file_name_input.value();
-    circuit[root/"units"/that->unit_name/"function name"]
+    circuit[ROOT/"units"/that->unit_name/"function name"]
       = that->function_name_input.value();
-    circuit[root/"units"/that->unit_name/"inputs names"]
+    circuit[ROOT/"units"/that->unit_name/"inputs names"]
       = that->inputs_list_input.value();
-    circuit[root/"units"/that->unit_name/"outputs names"]
+    circuit[ROOT/"units"/that->unit_name/"outputs names"]
       = that->outputs_list_input.value();
-    circuit[root/"units"/that->unit_name/"context size"]
+    circuit[ROOT/"units"/that->unit_name/"context size"]
       = (int)that->context_size_input.value();
     bus(IM("screen update")); that->hide(); }
   
@@ -250,23 +250,23 @@ editor::workspace::workspace(int x, int y, int w, int h)
 { }
 
 static int x_real(int x_screen)
-{ int x0 = context[root/"draw pos"/"x"];
-  int gs = context[root/"grid size"];
+{ int x0 = context[ROOT/"draw pos"/"x"];
+  int gs = context[ROOT/"grid size"];
   return  (x0 * gs + x_screen) / gs; }
 
 static int y_real(int y_screen)
-{ int y0 = context[root/"draw pos"/"y"];
-  int gs = context[root/"grid size"];
+{ int y0 = context[ROOT/"draw pos"/"y"];
+  int gs = context[ROOT/"grid size"];
   return (y0 * gs + y_screen) / gs; }
 
 static int x_screen(int x_real)
-{ x_real -= (int)context[root/"draw pos"/"x"];
-  x_real *= (int)context[root/"grid size"];
+{ x_real -= (int)context[ROOT/"draw pos"/"x"];
+  x_real *= (int)context[ROOT/"grid size"];
   return x_real; }
 
 static int y_screen(int y_real)
-{ y_real -= (int)context[root/"draw pos"/"y"];
-  y_real *= (int)context[root/"grid size"];
+{ y_real -= (int)context[ROOT/"draw pos"/"y"];
+  y_real *= (int)context[ROOT/"grid size"];
   return y_real; }
 
 int editor::workspace::handle(int event)
@@ -309,35 +309,35 @@ int editor::workspace::handle(int event)
   if (event == FL_LEAVE) { single_window->cursor(FL_CURSOR_DEFAULT); return 1; }
 
   if (event == FL_DRAG)
-  { if (context[root/"edit mode"] == "normal" &&
-        !!context(root/"highlight"))
-    { if (context[root/"highlight"/"type"] == "wire point")
-      { std::string wire = context[root/"highlight"/"wire"];
-        std::string point = context[root/"highlight"/"point"];
-        circuit[root/"wires"/wire/point/"x"] = x_real(Fl::event_x() - x());
-        circuit[root/"wires"/wire/point/"y"] = y_real(Fl::event_y() - y());
+  { if (context[ROOT/"edit mode"] == "normal" &&
+        !!context(ROOT/"highlight"))
+    { if (context[ROOT/"highlight"/"type"] == "wire point")
+      { std::string wire = context[ROOT/"highlight"/"wire"];
+        std::string point = context[ROOT/"highlight"/"point"];
+        circuit[ROOT/"wires"/wire/point/"x"] = x_real(Fl::event_x() - x());
+        circuit[ROOT/"wires"/wire/point/"y"] = y_real(Fl::event_y() - y());
         redraw(); } 
 
-      else if (context[root/"highlight"/"type"] == "input")
-      { std::string input = context[root/"highlight"/"input"];
-        circuit[root/"inputs"/input/"x"] = x_real(Fl::event_x() - x());
-        circuit[root/"inputs"/input/"y"] = y_real(Fl::event_y() - y()); }
+      else if (context[ROOT/"highlight"/"type"] == "input")
+      { std::string input = context[ROOT/"highlight"/"input"];
+        circuit[ROOT/"inputs"/input/"x"] = x_real(Fl::event_x() - x());
+        circuit[ROOT/"inputs"/input/"y"] = y_real(Fl::event_y() - y()); }
 
-      else if (context[root/"highlight"/"type"] == "output")
-      { std::string output = context[root/"highlight"/"output"];
-        circuit[root/"outputs"/output/"x"] = x_real(Fl::event_x() - x());
-        circuit[root/"outputs"/output/"y"] = y_real(Fl::event_y() - y()); } }
+      else if (context[ROOT/"highlight"/"type"] == "output")
+      { std::string output = context[ROOT/"highlight"/"output"];
+        circuit[ROOT/"outputs"/output/"x"] = x_real(Fl::event_x() - x());
+        circuit[ROOT/"outputs"/output/"y"] = y_real(Fl::event_y() - y()); } }
     return 1; }
 
   if (event == FL_MOVE)
-  { int cx = context[root/"cursor pos"/"x"];
-    int cy = context[root/"cursor pos"/"y"];
+  { int cx = context[ROOT/"cursor pos"/"x"];
+    int cy = context[ROOT/"cursor pos"/"y"];
     int rx = x_real(Fl::event_x() - x());
     int ry = y_real(Fl::event_y() - y());
     
     if (cx != rx || cy != ry)
-    { context[root/"cursor pos"/"x"] = rx;
-      context[root/"cursor pos"/"y"] = ry;
+    { context[ROOT/"cursor pos"/"x"] = rx;
+      context[ROOT/"cursor pos"/"y"] = ry;
       bus(IM("cursor update")); }
 
     return 1; }
@@ -349,17 +349,17 @@ int editor::workspace::handle(int event)
   // zoom action, moving the view area
   if (event == FL_MOUSEWHEEL)
   { if (Fl::event_state() & FL_CTRL) // zoom
-    { context[root/"grid size"] += Fl::event_dy() * 5;
-      if ((int)context[root/"grid size"] > 100)
-      { context[root/"grid size"] = 100; }
-      else if ((int)context[root/"grid size"] < 5)
-      { context[root/"grid size"] = 5; } }
+    { context[ROOT/"grid size"] += Fl::event_dy() * 5;
+      if ((int)context[ROOT/"grid size"] > 100)
+      { context[ROOT/"grid size"] = 100; }
+      else if ((int)context[ROOT/"grid size"] < 5)
+      { context[ROOT/"grid size"] = 5; } }
 
     else if (Fl::event_state() & FL_SHIFT) // move horizontally
-    { context[root/"draw pos"/"x"] += Fl::event_dy(); }
+    { context[ROOT/"draw pos"/"x"] += Fl::event_dy(); }
 
     else // move vertically
-    { context[root/"draw pos"/"y"] += Fl::event_dy(); }
+    { context[ROOT/"draw pos"/"y"] += Fl::event_dy(); }
 
     redraw(); return 1; }
 
@@ -376,25 +376,25 @@ void editor::workspace::draw()
 
   // ---> grid
   fl_color(LBLUE);
-  if (!context(root/"grid size")) { context[root/"grid size"] = 20; }
-  for (unsigned int i = 0; i < w(); i += (int)context[root/"grid size"])
+  if (!context(ROOT/"grid size")) { context[ROOT/"grid size"] = 20; }
+  for (unsigned int i = 0; i < w(); i += (int)context[ROOT/"grid size"])
   { fl_line(x() + i, y(), x() + i, y() + h()); }
-  for (unsigned int i = 0; i < h(); i += (int)context[root/"grid size"])
+  for (unsigned int i = 0; i < h(); i += (int)context[ROOT/"grid size"])
   { fl_line(x(), y() + i, x() + w(), y() + i); }
   // <---
 
   // ---> inputs
   fl_color(BLACK);
-  for (std::string input : circuit.ls(root/"inputs"))
+  for (std::string input : circuit.ls(ROOT/"inputs"))
   { int _x[6] = { 0 }; int _y[6] = { 0 };
 
-    _x[0] = circuit[root/"inputs"/input/"x"];
-    _y[0] = circuit[root/"inputs"/input/"y"];
+    _x[0] = circuit[ROOT/"inputs"/input/"x"];
+    _y[0] = circuit[ROOT/"inputs"/input/"y"];
 
-    fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+    fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
     int pixel_w = 
-      fl_width(((std::string)circuit[root/"inputs"/input/"name"]).c_str());
-    int name_w = pixel_w / (int)context[root/"grid size"] + 1;
+      fl_width(((std::string)circuit[ROOT/"inputs"/input/"name"]).c_str());
+    int name_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
 
     _x[1] = _x[0] + name_w;     _y[1] = _y[0];
     _x[2] = _x[0] + name_w + 1; _y[2] = _y[0] + 1;
@@ -402,30 +402,30 @@ void editor::workspace::draw()
     _x[4] = _x[0];              _y[4] = _y[0] + 2;
     _x[5] = _x[0];              _y[5] = _y[0];
 
-    circuit[root/"inputs"/input/"point"/"x"] = _x[2];
-    circuit[root/"inputs"/input/"point"/"y"] = _y[2];
+    circuit[ROOT/"inputs"/input/"point"/"x"] = _x[2];
+    circuit[ROOT/"inputs"/input/"point"/"y"] = _y[2];
 
     for (unsigned int i = 0; i < 5; i++)
     { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
               x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
 
-    fl_draw(((std::string)circuit[root/"inputs"/input/"name"]).c_str(),
+    fl_draw(((std::string)circuit[ROOT/"inputs"/input/"name"]).c_str(),
             x() + x_screen(_x[0]), y() + y_screen(_y[0]),
-            pixel_w, 2 * (int)context[root/"grid size"],
+            pixel_w, 2 * (int)context[ROOT/"grid size"],
             FL_ALIGN_LEFT); }
   // <---
 
   // ---> outputs
-  for (std::string output : circuit.ls(root/"outputs"))
+  for (std::string output : circuit.ls(ROOT/"outputs"))
   { int _x[6] = { 0 }; int _y[6] = { 0 };
 
-    _x[0] = circuit[root/"outputs"/output/"x"];
-    _y[0] = circuit[root/"outputs"/output/"y"];
+    _x[0] = circuit[ROOT/"outputs"/output/"x"];
+    _y[0] = circuit[ROOT/"outputs"/output/"y"];
 
-    fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+    fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
     int pixel_w =
-      fl_width(((std::string)circuit[root/"outputs"/output/"name"]).c_str());
-    int name_w = pixel_w / (int)context[root/"grid size"] + 1;
+      fl_width(((std::string)circuit[ROOT/"outputs"/output/"name"]).c_str());
+    int name_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
 
     _x[1] = _x[0] + 1 + name_w; _y[1] = _y[0];
     _x[2] = _x[0] + 1 + name_w; _y[2] = _y[0] + 2;
@@ -437,34 +437,34 @@ void editor::workspace::draw()
     { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
               x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
 
-    circuit[root/"outputs"/output/"point"/"x"] = _x[4];
-    circuit[root/"outputs"/output/"point"/"y"] = _y[4];
+    circuit[ROOT/"outputs"/output/"point"/"x"] = _x[4];
+    circuit[ROOT/"outputs"/output/"point"/"y"] = _y[4];
               
-    fl_draw(((std::string)circuit[root/"outputs"/output/"name"]).c_str(),
+    fl_draw(((std::string)circuit[ROOT/"outputs"/output/"name"]).c_str(),
             x() + x_screen(_x[0] + 1), y() + y_screen(_y[0]),
-            pixel_w, 2 * (int)context[root/"grid size"],
+            pixel_w, 2 * (int)context[ROOT/"grid size"],
             FL_ALIGN_LEFT); }
   // <---
 
   // ---> units
-  for (std::string unit : circuit.ls(root/"units"))
-  { if      (circuit[root/"units"/unit/"type"] == "constant")
+  for (std::string unit : circuit.ls(ROOT/"units"))
+  { if      (circuit[ROOT/"units"/unit/"type"] == "constant")
     { fl_color(BLACK);
-      float val = circuit[root/"units"/unit/"value"];
-      fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+      float val = circuit[ROOT/"units"/unit/"value"];
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
       int pixel_w = fl_width(std::to_string(val).c_str());
-      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
 
       int _x[5] = { 0 }; int _y[5] = { 0 };
-      _x[0] = circuit[root/"units"/unit/"x"];
-      _y[0] = circuit[root/"units"/unit/"y"];
+      _x[0] = circuit[ROOT/"units"/unit/"x"];
+      _y[0] = circuit[ROOT/"units"/unit/"y"];
       _x[1] = _x[0] + label_w; _y[1] = _y[0];
       _x[2] = _x[0] + label_w; _y[2] = _y[0] + 2;
       _x[3] = _x[0];           _y[3] = _y[0] + 2;
       _x[4] = _x[0];           _y[4] = _y[0];
 
-      circuit[root/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w;
-      circuit[root/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -472,30 +472,30 @@ void editor::workspace::draw()
 
       fl_draw(std::to_string(val).c_str(),
               x() + x_screen(_x[0]), y() + y_screen(_y[0]),
-              pixel_w, 2 * (int)context[root/"grid size"],
+              pixel_w, 2 * (int)context[ROOT/"grid size"],
               FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "delay")
+    else if (circuit[ROOT/"units"/unit/"type"] == "delay")
     { fl_color(BLACK);
-      int val = circuit[root/"units"/unit/"value"];
+      int val = circuit[ROOT/"units"/unit/"value"];
       std::string label = std::string("z-").append(std::to_string(val));
-      fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
       int pixel_w = fl_width(label.c_str());
-      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
       
       int _x[5] = { 0 }; int _y[5] = { 0 };
-      _x[0] = circuit[root/"units"/unit/"x"];
-      _y[0] = circuit[root/"units"/unit/"y"];
+      _x[0] = circuit[ROOT/"units"/unit/"x"];
+      _y[0] = circuit[ROOT/"units"/unit/"y"];
       _x[1] = _x[0] + label_w + 2; _y[1] = _y[0];
       _x[2] = _x[0] + label_w;     _y[2] = _y[0] + 2;
       _x[3] = _x[0] - 2;           _y[3] = _y[0] + 2;
       _x[4] = _x[0];               _y[4] = _y[0];
 
-      circuit[root/"units"/unit/"inputs"/0/"x"] = _x[0] - 1;
-      circuit[root/"units"/unit/"inputs"/0/"y"] = _y[0] + 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x[0] - 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y[0] + 1;
 
-      circuit[root/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w + 1;
-      circuit[root/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -503,69 +503,69 @@ void editor::workspace::draw()
 
       fl_draw(label.c_str(),
               x() + x_screen(_x[0]), y() + y_screen(_y[0]),
-              pixel_w, 2 * (int)context[root/"grid size"],
+              pixel_w, 2 * (int)context[ROOT/"grid size"],
               FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "sum")
+    else if (circuit[ROOT/"units"/unit/"type"] == "sum")
     { fl_color(BLACK);
-      int _x = circuit[root/"units"/unit/"x"];
-      int _y = circuit[root/"units"/unit/"y"];
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[root/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[root/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[root/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[root/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
 
-      circuit[root/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[root/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
-              2 * (int)context[root/"grid size"],
-              2 * (int)context[root/"grid size"]);
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"]);
       fl_line(x() + x_screen(_x + 1),
-              y() + y_screen(_y    ) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y    ) + (int)context[ROOT/"grid size"] / 2,
               x() + x_screen(_x + 1),
-              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2);
-      fl_line(x() + x_screen(_x    ) + (int)context[root/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[ROOT/"grid size"] / 2);
+      fl_line(x() + x_screen(_x    ) + (int)context[ROOT/"grid size"] / 2,
               y() + y_screen(_y + 1),
-              x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
+              x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
               y() + y_screen(_y + 1)); }
     
-    else if (circuit[root/"units"/unit/"type"] == "product")
+    else if (circuit[ROOT/"units"/unit/"type"] == "product")
     { fl_color(BLACK);
-      int _x = circuit[root/"units"/unit/"x"];
-      int _y = circuit[root/"units"/unit/"y"];
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
       
-      circuit[root/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[root/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[root/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[root/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
 
-      circuit[root/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[root/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
-              2 * (int)context[root/"grid size"],
-              2 * (int)context[root/"grid size"]);
-      fl_line(x() + x_screen(_x + 0) + (int)context[root/"grid size"] / 2,
-              y() + y_screen(_y + 0) + (int)context[root/"grid size"] / 2,
-              x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
-              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2);
-      fl_line(x() + x_screen(_x + 1) + (int)context[root/"grid size"] / 2,
-              y() + y_screen(_y + 0) + (int)context[root/"grid size"] / 2,
-              x() + x_screen(_x + 0) + (int)context[root/"grid size"] / 2,
-              y() + y_screen(_y + 1) + (int)context[root/"grid size"] / 2); }
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"]);
+      fl_line(x() + x_screen(_x + 0) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 0) + (int)context[ROOT/"grid size"] / 2,
+              x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[ROOT/"grid size"] / 2);
+      fl_line(x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 0) + (int)context[ROOT/"grid size"] / 2,
+              x() + x_screen(_x + 0) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[ROOT/"grid size"] / 2); }
     
-    else if (circuit[root/"units"/unit/"type"] == "function")
-    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
-      int _x0 = circuit[root/"units"/unit/"x"];
-      int _y0 = circuit[root/"units"/unit/"y"];
+    else if (circuit[ROOT/"units"/unit/"type"] == "function")
+    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x0 = circuit[ROOT/"units"/unit/"x"];
+      int _y0 = circuit[ROOT/"units"/unit/"y"];
       std::string label
-        = (std::string)circuit[root/"units"/unit/"function name"];
+        = (std::string)circuit[ROOT/"units"/unit/"function name"];
       int pixel_w = fl_width(label.c_str());
-      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
 
       int _x[5] = { 0 }; int _y[5] = { 0 };
       _x[0] = _x0;               _y[0] = _y0;
@@ -574,11 +574,11 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[root/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[root/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
 
-      circuit[root/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[root/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -586,20 +586,20 @@ void editor::workspace::draw()
 
       fl_draw(label.c_str(),
              x() + x_screen(_x0), y() + y_screen(_y0),
-             pixel_w, 2 * (int)context[root/"grid size"],
+             pixel_w, 2 * (int)context[ROOT/"grid size"],
              FL_ALIGN_LEFT); }
     
-    else if (circuit[root/"units"/unit/"type"] == "code block")
-    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[root/"grid size"]);
-      int _x0 = circuit[root/"units"/unit/"x"];
-      int _y0 = circuit[root/"units"/unit/"y"];
-      std::string label = (std::string)circuit[root/"units"/unit/"source file"];
+    else if (circuit[ROOT/"units"/unit/"type"] == "code block")
+    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x0 = circuit[ROOT/"units"/unit/"x"];
+      int _y0 = circuit[ROOT/"units"/unit/"y"];
+      std::string label = (std::string)circuit[ROOT/"units"/unit/"source file"];
       label.append(":");
-      label.append((std::string)circuit[root/"units"/unit/"function name"]);
+      label.append((std::string)circuit[ROOT/"units"/unit/"function name"]);
       int pixel_w = fl_width(label.c_str());
 
       std::string inputs
-        = (std::string)circuit[root/"units"/unit/"inputs names"];
+        = (std::string)circuit[ROOT/"units"/unit/"inputs names"];
       std::list<std::string> ilist;
       std::string current_i;
       for (char c : inputs)
@@ -611,7 +611,7 @@ void editor::workspace::draw()
         if (pw > pixel_w) { pixel_w = pw; } }
 
       std::string outputs
-        = (std::string)circuit[root/"units"/unit/"outputs names"];
+        = (std::string)circuit[ROOT/"units"/unit/"outputs names"];
       std::list<std::string> olist;
       std::string current_o;
       for (char c : outputs)
@@ -622,41 +622,41 @@ void editor::workspace::draw()
       { int pw = fl_width(output.c_str());
         if (pw > pixel_w) { pixel_w = pw; } }
 
-      int label_w = pixel_w / (int)context[root/"grid size"] + 1;
+      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
       fl_rect(x() + x_screen(_x0), y() + y_screen(_y0),
-              label_w * (int)context[root/"grid size"],
-              2 * (int)context[root/"grid size"]);
+              label_w * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"]);
       fl_draw(label.c_str(),
               x() + x_screen(_x0), y() + y_screen(_y0),
-              pixel_w, 2 * (int)context[root/"grid size"],
+              pixel_w, 2 * (int)context[ROOT/"grid size"],
               FL_ALIGN_LEFT);
 
       fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2),
-              label_w * (int)context[root/"grid size"],
-              ilist.size() * 2 * (int)context[root/"grid size"]);
+              label_w * (int)context[ROOT/"grid size"],
+              ilist.size() * 2 * (int)context[ROOT/"grid size"]);
       int icount = 0;
       for (std::string input : ilist)
       { fl_draw(input.c_str(),
                 x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * icount),
-                pixel_w, 2 * (int)context[root/"grid size"],
+                pixel_w, 2 * (int)context[ROOT/"grid size"],
                 FL_ALIGN_LEFT);
-        circuit[root/"units"/unit/"inputs"/icount/"x"] = _x0;
-        circuit[root/"units"/unit/"inputs"/icount/"y"]
+        circuit[ROOT/"units"/unit/"inputs"/icount/"x"] = _x0;
+        circuit[ROOT/"units"/unit/"inputs"/icount/"y"]
           = _y0 + 2 + 2 * icount + 1;
         icount++; }
 
       fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * ilist.size()),
-              label_w * (int)context[root/"grid size"],
-              olist.size() * 2 * (int)context[root/"grid size"]);
+              label_w * (int)context[ROOT/"grid size"],
+              olist.size() * 2 * (int)context[ROOT/"grid size"]);
       int ocount = 0;
       for (std::string output : olist)
       { fl_draw(output.c_str(),
                 x() + x_screen(_x0),
                 y() + y_screen(_y0 + 2 + 2 * ilist.size() + 2 * ocount),
-                pixel_w, 2 * (int)context[root/"grid size"],
+                pixel_w, 2 * (int)context[ROOT/"grid size"],
                 FL_ALIGN_LEFT);
-        circuit[root/"units"/unit/"outputs"/ocount/"x"] = _x0 + label_w;
-        circuit[root/"units"/unit/"outputs"/ocount/"y"]
+        circuit[ROOT/"units"/unit/"outputs"/ocount/"x"] = _x0 + label_w;
+        circuit[ROOT/"units"/unit/"outputs"/ocount/"y"]
           = _y0 + 2 + 2 * (int)ilist.size() + 2 * ocount + 1;
         ocount++; }
     } }
@@ -664,21 +664,21 @@ void editor::workspace::draw()
 
   // ---> wires 
   fl_color(BLACK);
-  for (std::string wire : circuit.ls(root/"wires"))
-  { fl_line(x() + x_screen((int)circuit[root/"wires"/wire/0/"x"]),
-            y() + y_screen((int)circuit[root/"wires"/wire/0/"y"]),
-            x() + x_screen((int)circuit[root/"wires"/wire/1/"x"]),
-            y() + y_screen((int)circuit[root/"wires"/wire/1/"y"])); }
+  for (std::string wire : circuit.ls(ROOT/"wires"))
+  { fl_line(x() + x_screen((int)circuit[ROOT/"wires"/wire/0/"x"]),
+            y() + y_screen((int)circuit[ROOT/"wires"/wire/0/"y"]),
+            x() + x_screen((int)circuit[ROOT/"wires"/wire/1/"x"]),
+            y() + y_screen((int)circuit[ROOT/"wires"/wire/1/"y"])); }
   // <---
 
   // ---> joints
   fl_line_style(FL_SOLID, 1); fl_color(BLACK);
   struct point_data { int x; int y; int count; };
   std::list<point_data> points;
-  for (std::string wire : circuit.ls(root/"wires"))
+  for (std::string wire : circuit.ls(ROOT/"wires"))
   { for (int i = 0; i < 2; i++)
-    { int _x = circuit[root/"wires"/wire/i/"x"];
-      int _y = circuit[root/"wires"/wire/i/"y"];
+    { int _x = circuit[ROOT/"wires"/wire/i/"x"];
+      int _y = circuit[ROOT/"wires"/wire/i/"y"];
       point_data* point = nullptr;
 
       for (point_data& p : points)
@@ -696,64 +696,64 @@ void editor::workspace::draw()
   // <---
 
   // ---> highlight
-  if (!!context(root/"highlight"))
+  if (!!context(ROOT/"highlight"))
   { fl_line_style(FL_SOLID, 1); fl_color(BLUE);
 
-    if (context[root/"highlight"/"type"] == "wire point")
-    { std::string wire = context[root/"highlight"/"wire"];
-      std::string point = context[root/"highlight"/"point"];
-      int sx = x_screen((int)circuit[root/"wires"/wire/point/"x"]);
-      int sy = y_screen((int)circuit[root/"wires"/wire/point/"y"]);
+    if (context[ROOT/"highlight"/"type"] == "wire point")
+    { std::string wire = context[ROOT/"highlight"/"wire"];
+      std::string point = context[ROOT/"highlight"/"point"];
+      int sx = x_screen((int)circuit[ROOT/"wires"/wire/point/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"wires"/wire/point/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); }
 
-    else if (context[root/"highlight"/"type"] == "input")
-    { std::string input = context[root/"highlight"/"input"];
-      int sx = x_screen((int)circuit[root/"inputs"/input/"x"]);
-      int sy = y_screen((int)circuit[root/"inputs"/input/"y"]);
+    else if (context[ROOT/"highlight"/"type"] == "input")
+    { std::string input = context[ROOT/"highlight"/"input"];
+      int sx = x_screen((int)circuit[ROOT/"inputs"/input/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"inputs"/input/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); }
 
-    else if (context[root/"highlight"/"type"] == "output")
-    { std::string output = context[root/"highlight"/"output"];
-      int sx = x_screen((int)circuit[root/"outputs"/output/"x"]);
-      int sy = y_screen((int)circuit[root/"outputs"/output/"y"]);
+    else if (context[ROOT/"highlight"/"type"] == "output")
+    { std::string output = context[ROOT/"highlight"/"output"];
+      int sx = x_screen((int)circuit[ROOT/"outputs"/output/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"outputs"/output/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE * 2, CSIZE * 2); }
 
-    else if (context[root/"highlight"/"type"] == "unit")
-    { std::string unit = context[root/"highlight"/"unit"];
-      int sx = x_screen((int)circuit[root/"units"/unit/"x"]);
-      int sy = y_screen((int)circuit[root/"units"/unit/"y"]);
+    else if (context[ROOT/"highlight"/"type"] == "unit")
+    { std::string unit = context[ROOT/"highlight"/"unit"];
+      int sx = x_screen((int)circuit[ROOT/"units"/unit/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"units"/unit/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); } }
 
   // units inputs and outputs (only when editing or highlighting wires)
   // inputs are green circles, outputs are blue circuits
-  if (context[root/"edit mode"]        == "place wire" ||
-      context(root/"highlight"/"type") == "wire point")
+  if (context[ROOT/"edit mode"]        == "place wire" ||
+      context(ROOT/"highlight"/"type") == "wire point")
   { // ---> wire markers
     fl_line_style(FL_SOLID, 1); fl_color(BLUE);
-    for (std::string wire : circuit.ls(root/"wires"))
-    { int _x0 = circuit[root/"wires"/wire/0/"x"];
-      int _y0 = circuit[root/"wires"/wire/0/"y"];
+    for (std::string wire : circuit.ls(ROOT/"wires"))
+    { int _x0 = circuit[ROOT/"wires"/wire/0/"x"];
+      int _y0 = circuit[ROOT/"wires"/wire/0/"y"];
       fl_rect(x() + x_screen(_x0) - CSIZE, y() + y_screen(_y0) - CSIZE,
               CSIZE*2, CSIZE*2);
-      int _x1 = circuit[root/"wires"/wire/1/"x"];
-      int _y1 = circuit[root/"wires"/wire/1/"y"];
+      int _x1 = circuit[ROOT/"wires"/wire/1/"x"];
+      int _y1 = circuit[ROOT/"wires"/wire/1/"y"];
       fl_rect(x() + x_screen(_x1) - CSIZE, y() + y_screen(_y1) - CSIZE,
               CSIZE*2, CSIZE*2); }
     // <---
     
     // ---> units inputs and outputs
-    for (std::string unit : circuit.ls(root/"units"))
+    for (std::string unit : circuit.ls(ROOT/"units"))
     { fl_line_style(FL_SOLID, 1); fl_color(GREEN);
-      for (std::string input : circuit.ls(root/"units"/unit/"inputs"))
-      { int _x = circuit[root/"units"/unit/"inputs"/input/"x"];
-        int _y = circuit[root/"units"/unit/"inputs"/input/"y"];
+      for (std::string input : circuit.ls(ROOT/"units"/unit/"inputs"))
+      { int _x = circuit[ROOT/"units"/unit/"inputs"/input/"x"];
+        int _y = circuit[ROOT/"units"/unit/"inputs"/input/"y"];
         fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
                CSIZE*2, CSIZE*2, 0.0, 360.0); }
 
       fl_line_style(FL_SOLID, 1); fl_color(BLUE);
-      for (std::string output : circuit.ls(root/"units"/unit/"outputs"))
-      { int _x = circuit[root/"units"/unit/"outputs"/output/"x"];
-        int _y = circuit[root/"units"/unit/"outputs"/output/"y"];
+      for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
+      { int _x = circuit[ROOT/"units"/unit/"outputs"/output/"x"];
+        int _y = circuit[ROOT/"units"/unit/"outputs"/output/"y"];
         fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
                CSIZE*2, CSIZE*2, 0.0, 360.0); } }
     // <---
@@ -761,10 +761,10 @@ void editor::workspace::draw()
     // ---> circuit inputs
     // input can contain only output (respectively to scheme point of view)
     fl_line_style(FL_SOLID, 1); fl_color(BLUE);
-    for (std::string input : circuit.ls(root/"inputs"))
-    { if (!circuit(root/"inputs"/input/"point")) { continue; }
-      int _x = circuit[root/"inputs"/input/"point"/"x"];
-      int _y = circuit[root/"inputs"/input/"point"/"y"];
+    for (std::string input : circuit.ls(ROOT/"inputs"))
+    { if (!circuit(ROOT/"inputs"/input/"point")) { continue; }
+      int _x = circuit[ROOT/"inputs"/input/"point"/"x"];
+      int _y = circuit[ROOT/"inputs"/input/"point"/"y"];
       fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
              CSIZE*2, CSIZE*2, 0.0, 360.0); }
     // <---
@@ -772,76 +772,76 @@ void editor::workspace::draw()
     // ---> circuit outputs
     // output can contain only input (respectively to scheme point of view)
     fl_line_style(FL_SOLID, 1); fl_color(GREEN);
-    for (std::string output : circuit.ls(root/"outputs"))
-    { if (!circuit(root/"outputs"/output/"point")) { continue; }
-      int _x = circuit[root/"outputs"/output/"point"/"x"];
-      int _y = circuit[root/"outputs"/output/"point"/"y"];
+    for (std::string output : circuit.ls(ROOT/"outputs"))
+    { if (!circuit(ROOT/"outputs"/output/"point")) { continue; }
+      int _x = circuit[ROOT/"outputs"/output/"point"/"x"];
+      int _y = circuit[ROOT/"outputs"/output/"point"/"y"];
       fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
              CSIZE*2, CSIZE*2, 0.0, 360.0); }
     // <---
     }
 
   // editable items
-  if (context[root/"edit mode"] == "edit properties")
-  { for (std::string unit : circuit.ls(root/"units"))
+  if (context[ROOT/"edit mode"] == "edit properties")
+  { for (std::string unit : circuit.ls(ROOT/"units"))
     { fl_line_style(FL_SOLID, 1); fl_color(GREEN);
-      int _x = circuit[root/"units"/unit/"x"];
-      int _y = circuit[root/"units"/unit/"y"];
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
       fl_rect(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
               CSIZE*2, CSIZE*2); }
 
-    for (std::string input : circuit.ls(root/"inputs"))
+    for (std::string input : circuit.ls(ROOT/"inputs"))
     { fl_line_style(FL_SOLID, 1); fl_color(GREEN);
-      int _x = circuit[root/"inputs"/input/"x"];
-      int _y = circuit[root/"inputs"/input/"y"];
+      int _x = circuit[ROOT/"inputs"/input/"x"];
+      int _y = circuit[ROOT/"inputs"/input/"y"];
       fl_rect(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
               CSIZE*2, CSIZE*2); }
 
-    for (std::string output : circuit.ls(root/"outputs"))
+    for (std::string output : circuit.ls(ROOT/"outputs"))
     { fl_line_style(FL_SOLID, 1); fl_color(GREEN);
-      int _x = circuit[root/"outputs"/output/"x"];
-      int _y = circuit[root/"outputs"/output/"y"];
+      int _x = circuit[ROOT/"outputs"/output/"x"];
+      int _y = circuit[ROOT/"outputs"/output/"y"];
       fl_rect(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
               CSIZE*2, CSIZE*2); } }
   // <---
   
   // ---> errors
   fl_line_style(FL_SOLID, 3); fl_color(RED);
-  for (std::string net : context.ls(root/"network errors"))
-  { for (std::string wire : context.ls(root/"network"/net/"wires"))
-    { fl_line(x() + x_screen((int)circuit[root/"wires"/wire/0/"x"]),
-              y() + y_screen((int)circuit[root/"wires"/wire/0/"y"]),
-              x() + x_screen((int)circuit[root/"wires"/wire/1/"x"]),
-              y() + y_screen((int)circuit[root/"wires"/wire/1/"y"])); } }
+  for (std::string net : context.ls(ROOT/"network errors"))
+  { for (std::string wire : context.ls(ROOT/"network"/net/"wires"))
+    { fl_line(x() + x_screen((int)circuit[ROOT/"wires"/wire/0/"x"]),
+              y() + y_screen((int)circuit[ROOT/"wires"/wire/0/"y"]),
+              x() + x_screen((int)circuit[ROOT/"wires"/wire/1/"x"]),
+              y() + y_screen((int)circuit[ROOT/"wires"/wire/1/"y"])); } }
 
-  for (std::string error : context.ls(root/"sequence errors"))
-  { std::string type = context[root/"sequence errors"/error/"type"];
-    std::string id = context[root/"sequence errors"/error/"id"];
+  for (std::string error : context.ls(ROOT/"sequence errors"))
+  { std::string type = context[ROOT/"sequence errors"/error/"type"];
+    std::string id = context[ROOT/"sequence errors"/error/"id"];
 
     if (type == "input")
-    { int sx = x_screen((int)circuit[root/"inputs"/id/"x"]);
-      int sy = y_screen((int)circuit[root/"inputs"/id/"y"]);
+    { int sx = x_screen((int)circuit[ROOT/"inputs"/id/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"inputs"/id/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
     else if (type == "output")
-    { int sx = x_screen((int)circuit[root/"outputs"/id/"x"]);
-      int sy = y_screen((int)circuit[root/"outputs"/id/"y"]);
+    { int sx = x_screen((int)circuit[ROOT/"outputs"/id/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"outputs"/id/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
     else if (type == "unit")
-    { int sx = x_screen((int)circuit[root/"units"/id/"x"]);
-      int sy = y_screen((int)circuit[root/"units"/id/"y"]);
+    { int sx = x_screen((int)circuit[ROOT/"units"/id/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"units"/id/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); } }
   // <---
 
   // ---> cursor
   fl_line_style(FL_SOLID, 3); fl_color(GREEN);
-  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]) - CSIZE,
-          y() + y_screen((int)context[root/"cursor pos"/"y"]),
-          x() + x_screen((int)context[root/"cursor pos"/"x"]) + CSIZE,
-          y() + y_screen((int)context[root/"cursor pos"/"y"]));
-  fl_line(x() + x_screen((int)context[root/"cursor pos"/"x"]),
-          y() + y_screen((int)context[root/"cursor pos"/"y"]) - CSIZE,
-          x() + x_screen((int)context[root/"cursor pos"/"x"]),
-          y() + y_screen((int)context[root/"cursor pos"/"y"]) + CSIZE);
+  fl_line(x() + x_screen((int)context[ROOT/"cursor pos"/"x"]) - CSIZE,
+          y() + y_screen((int)context[ROOT/"cursor pos"/"y"]),
+          x() + x_screen((int)context[ROOT/"cursor pos"/"x"]) + CSIZE,
+          y() + y_screen((int)context[ROOT/"cursor pos"/"y"]));
+  fl_line(x() + x_screen((int)context[ROOT/"cursor pos"/"x"]),
+          y() + y_screen((int)context[ROOT/"cursor pos"/"y"]) - CSIZE,
+          x() + x_screen((int)context[ROOT/"cursor pos"/"x"]),
+          y() + y_screen((int)context[ROOT/"cursor pos"/"y"]) + CSIZE);
   // <---
 
   fl_line_style(0); fl_color(0); fl_pop_clip(); }
@@ -1048,11 +1048,11 @@ editor::window::window()
   side_screen.add(dummy);
   side_screen.resizable(dummy);
 
-  context[root/"draw pos"/"x"] = 0;
-  context[root/"draw pos"/"y"] = 0;
-  context[root/"cursor pos"/"x"] = 0;
-  context[root/"cursor pos"/"y"] = 0;
-  context[root/"grid size"] = 10;
+  context[ROOT/"draw pos"/"x"] = 0;
+  context[ROOT/"draw pos"/"y"] = 0;
+  context[ROOT/"cursor pos"/"x"] = 0;
+  context[ROOT/"cursor pos"/"y"] = 0;
+  context[ROOT/"grid size"] = 10;
 
   show(); }
 
@@ -1071,8 +1071,8 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "generate code")
   { bus(IM("check circuit errors"));
     bool fail = false;
-    if (context.ls(root/"network errors").size() ||
-        context.ls(root/"sequence errors").size()) { fail = true; }
+    if (context.ls(ROOT/"network errors").size() ||
+        context.ls(ROOT/"sequence errors").size()) { fail = true; }
     if (!fail)
     { bus(IM("generate code"));
       bus(IM("screen update")); } }
@@ -1086,12 +1086,12 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
     bus(IM("screen update")); }
 
   else if (cmd == "save")
-  { if (!params(root/"circruit file path"))
+  { if (!params(ROOT/"circruit file path"))
     { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
       if (path) { bus(IM("file save") << IV("path", path)); } }
     else
     { bus(IM("file save")
-          << IV("path", (std::string)context[root/"circuit file path"])); } }
+          << IV("path", (std::string)context[ROOT/"circuit file path"])); } }
 
   else if (cmd == "save as")
   { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
@@ -1108,62 +1108,62 @@ void editor::window::handler(void* ctx, IM mess)
   if (mess == "add wire")
   { bus(IM("end input"));
     wire_button->color(GREEN); wire_button->redraw();
-    context.del(root/"current wire");
-    context[root/"edit mode"] = "place wire";
+    context.del(ROOT/"current wire");
+    context[ROOT/"edit mode"] = "place wire";
     that->redraw(); }
 
   else if (mess == "add input")
   { bus(IM("end input"));
     input_button->color(GREEN); input_button->redraw();
-    context[root/"edit mode"] = "place input";
+    context[ROOT/"edit mode"] = "place input";
     that->redraw(); }
 
   else if (mess == "add output")
   { bus(IM("end input"));
     output_button->color(GREEN); output_button->redraw();
-    context[root/"edit mode"] = "place output";
+    context[ROOT/"edit mode"] = "place output";
     that->redraw(); }
 
   else if (mess == "add const")
   { bus(IM("end input"));
     const_button->color(GREEN); const_button->redraw();
-    context[root/"edit mode"] = "place const";
+    context[ROOT/"edit mode"] = "place const";
     that->redraw(); }
 
   else if (mess == "add delay")
   { bus(IM("end input"));
     delay_button->color(GREEN); delay_button->redraw();
-    context[root/"edit mode"] = "place delay";
+    context[ROOT/"edit mode"] = "place delay";
     that->redraw(); }
 
   else if (mess == "add sum")
   { bus(IM("end input"));
     sum_button->color(GREEN); sum_button->redraw();
-    context[root/"edit mode"] = "place sum";
+    context[ROOT/"edit mode"] = "place sum";
     that->redraw(); }
 
   else if (mess == "add prod")
   { bus(IM("end input"));
     prod_button->color(GREEN); prod_button->redraw();
-    context[root/"edit mode"] = "place prod";
+    context[ROOT/"edit mode"] = "place prod";
     that->redraw(); }
 
   else if (mess == "add function")
   { bus(IM("end input"));
     function_button->color(GREEN); function_button->redraw();
-    context[root/"edit mode"] = "place function";
+    context[ROOT/"edit mode"] = "place function";
     that->redraw(); }
 
   else if (mess == "add code block")
   { bus(IM("end input"));
     code_button->color(GREEN); code_button->redraw();
-    context[root/"edit mode"] = "place code block";
+    context[ROOT/"edit mode"] = "place code block";
     that->redraw(); }
 
   else if (mess == "edit items")
   { bus(IM("end input"));
     edit_button->color(GREEN); edit_button->redraw();
-    context[root/"edit mode"] = "edit properties";
+    context[ROOT/"edit mode"] = "edit properties";
     that->redraw(); }
 
   else if (mess == "end input")
@@ -1179,354 +1179,354 @@ void editor::window::handler(void* ctx, IM mess)
     code_button->color(WHITE); code_button->redraw();
 
     // finalize previous operations if needed
-    if (context[root/"edit mode"] == "place wire")
-    { context.del(root/"current wire"); }
+    if (context[ROOT/"edit mode"] == "place wire")
+    { context.del(ROOT/"current wire"); }
 
-    context[root/"edit mode"] = "normal";
+    context[ROOT/"edit mode"] = "normal";
     that->redraw(); }
 
   else if (mess == "delete")
   { bus(IM("clear errors"));
-    if (!context(root/"highlight")) { return; }
+    if (!context(ROOT/"highlight")) { return; }
 
-    if (context[root/"highlight"/"type"] == "wire point")
-    { std::string wire = context[root/"highlight"/"wire"];
-      circuit.del(root/"wires"/wire);
-      context.del(root/"highlight"); that->redraw(); }
+    if (context[ROOT/"highlight"/"type"] == "wire point")
+    { std::string wire = context[ROOT/"highlight"/"wire"];
+      circuit.del(ROOT/"wires"/wire);
+      context.del(ROOT/"highlight"); that->redraw(); }
 
-    else if (context[root/"highlight"/"type"] == "input")
-    { std::string input = context[root/"highlight"/"input"];
-      circuit.del(root/"inputs"/input);
-      context.del(root/"highlight"); that->redraw(); }
+    else if (context[ROOT/"highlight"/"type"] == "input")
+    { std::string input = context[ROOT/"highlight"/"input"];
+      circuit.del(ROOT/"inputs"/input);
+      context.del(ROOT/"highlight"); that->redraw(); }
 
-    else if (context[root/"highlight"/"type"] == "output")
-    { std::string output = context[root/"highlight"/"output"];
-      circuit.del(root/"outputs"/output);
-      context.del(root/"highlight"); that->redraw(); }
+    else if (context[ROOT/"highlight"/"type"] == "output")
+    { std::string output = context[ROOT/"highlight"/"output"];
+      circuit.del(ROOT/"outputs"/output);
+      context.del(ROOT/"highlight"); that->redraw(); }
 
-    else if (context[root/"highlight"/"type"] == "unit")
-    { std::string unit = context[root/"highlight"/"unit"];
-      circuit.del(root/"units"/unit);
-      context.del(root/"highlight"); that->redraw(); }
+    else if (context[ROOT/"highlight"/"type"] == "unit")
+    { std::string unit = context[ROOT/"highlight"/"unit"];
+      circuit.del(ROOT/"units"/unit);
+      context.del(ROOT/"highlight"); that->redraw(); }
   
     bus(IM("cursor update")); }
 
   else if (mess == "edit")
-  { if (!context(root/"highlight")) { return; }
+  { if (!context(ROOT/"highlight")) { return; }
 
-    else if (context[root/"highlight"/"type"] == "input")
-    { inputEditWindow w((std::string)context[root/"highlight"/"input"]);
+    else if (context[ROOT/"highlight"/"type"] == "input")
+    { inputEditWindow w((std::string)context[ROOT/"highlight"/"input"]);
       while (w.shown()) { Fl::wait(); } }
 
-    else if (context[root/"highlight"/"type"] == "output")
-    { outputEditWindow w((std::string)context[root/"highlight"/"output"]);
+    else if (context[ROOT/"highlight"/"type"] == "output")
+    { outputEditWindow w((std::string)context[ROOT/"highlight"/"output"]);
       while (w.shown()) { Fl::wait(); } }
 
-    else if (context[root/"highlight"/"type"] == "unit")
-    { std::string unit = context[root/"highlight"/"unit"];
-      if (circuit[root/"units"/unit/"type"] == "constant")
+    else if (context[ROOT/"highlight"/"type"] == "unit")
+    { std::string unit = context[ROOT/"highlight"/"unit"];
+      if (circuit[ROOT/"units"/unit/"type"] == "constant")
       { constEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
 
-      else if (circuit[root/"units"/unit/"type"] == "delay")
+      else if (circuit[ROOT/"units"/unit/"type"] == "delay")
       { delayEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
 
-      else if (circuit[root/"units"/unit/"type"] == "function")
+      else if (circuit[ROOT/"units"/unit/"type"] == "function")
       { functionEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
 
-      else if (circuit[root/"units"/unit/"type"] == "code block")
+      else if (circuit[ROOT/"units"/unit/"type"] == "code block")
       { codeEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
       
       } }
 
-  else if (mess == "space down") { context[root/"space"] = (int)1;
+  else if (mess == "space down") { context[ROOT/"space"] = (int)1;
                                    bus(IM("click")); }
 
-  else if (mess == "clear errors") { context.del(root/"network");
-                                     context.del(root/"network errors");
-                                     context.del(root/"sequence errors");
+  else if (mess == "clear errors") { context.del(ROOT/"network");
+                                     context.del(ROOT/"network errors");
+                                     context.del(ROOT/"sequence errors");
                                      bus(IM("screen update")); }
 
   else if (mess == "click")
   { bus(IM("clear errors"));
 
-    if (context[root/"edit mode"] == "place wire")
+    if (context[ROOT/"edit mode"] == "place wire")
     { bus(IM("place wire press")); }
-    else if (context[root/"edit mode"] == "place input")
+    else if (context[ROOT/"edit mode"] == "place input")
     { bus(IM("place input press")); }
-    else if (context[root/"edit mode"] == "place output")
+    else if (context[ROOT/"edit mode"] == "place output")
     { bus(IM("place output press")); }
-    else if (context[root/"edit mode"] == "place const")
+    else if (context[ROOT/"edit mode"] == "place const")
     { bus(IM("place const press")); }
-    else if (context[root/"edit mode"] == "place delay")
+    else if (context[ROOT/"edit mode"] == "place delay")
     { bus(IM("place delay press")); }
-    else if (context[root/"edit mode"] == "place sum")
+    else if (context[ROOT/"edit mode"] == "place sum")
     { bus(IM("place sum press")); }
-    else if (context[root/"edit mode"] == "place prod")
+    else if (context[ROOT/"edit mode"] == "place prod")
     { bus(IM("place prod press")); }
-    else if (context[root/"edit mode"] == "place function")
+    else if (context[ROOT/"edit mode"] == "place function")
     { bus(IM("place function press")); }
-    else if (context[root/"edit mode"] == "place code block")
+    else if (context[ROOT/"edit mode"] == "place code block")
     { bus(IM("place code block press")); }
-    else if (context[root/"edit mode"] == "edit properties")
+    else if (context[ROOT/"edit mode"] == "edit properties")
     { bus(IM("edit")); }
     
     bus(IM("cursor update")); }
 
-  else if (mess == "space up")     { context[root/"space"] = (int)0; }
-  else if (mess == "control down") { context[root/"control"] = (int)1; }
-  else if (mess == "control up")   { context[root/"control"] = (int)0; }
-  else if (mess == "shift down")   { context[root/"shift"] = (int)1; }
-  else if (mess == "shift up")     { context[root/"shift"] = (int)0; }
+  else if (mess == "space up")     { context[ROOT/"space"] = (int)0; }
+  else if (mess == "control down") { context[ROOT/"control"] = (int)1; }
+  else if (mess == "control up")   { context[ROOT/"control"] = (int)0; }
+  else if (mess == "shift down")   { context[ROOT/"shift"] = (int)1; }
+  else if (mess == "shift up")     { context[ROOT/"shift"] = (int)0; }
 
   else if (mess == "up")
-  { if ((int)context(root/"shift"))
-    { context[root/"draw pos"/"y"] -= 1; that->redraw(); }
-    else if ((int)context(root/"control"))
-    { context[root/"grid size"] += 5;
-      if ((int)context[root/"grid size"] > 100)
-      { context[root/"grid size"] = 100; }
+  { if ((int)context(ROOT/"shift"))
+    { context[ROOT/"draw pos"/"y"] -= 1; that->redraw(); }
+    else if ((int)context(ROOT/"control"))
+    { context[ROOT/"grid size"] += 5;
+      if ((int)context[ROOT/"grid size"] > 100)
+      { context[ROOT/"grid size"] = 100; }
       that->redraw(); }
-    else if ((int)context(root/"space"))
-    { if (context[root/"edit mode"] == "normal" &&
-          !!context(root/"highlight"))
-      { if (context[root/"highlight"/"type"] == "wire point")
-        { std::string wire = context[root/"highlight"/"wire"];
-          std::string point = context[root/"highlight"/"point"];
-          circuit[root/"wires"/wire/point/"y"] -= 1; that->redraw(); }
+    else if ((int)context(ROOT/"space"))
+    { if (context[ROOT/"edit mode"] == "normal" &&
+          !!context(ROOT/"highlight"))
+      { if (context[ROOT/"highlight"/"type"] == "wire point")
+        { std::string wire = context[ROOT/"highlight"/"wire"];
+          std::string point = context[ROOT/"highlight"/"point"];
+          circuit[ROOT/"wires"/wire/point/"y"] -= 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "input")
-        { std::string input = context[root/"highlight"/"input"];
-          circuit[root/"inputs"/input/"y"] -= 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "input")
+        { std::string input = context[ROOT/"highlight"/"input"];
+          circuit[ROOT/"inputs"/input/"y"] -= 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "output")
-        { std::string output = context[root/"highlight"/"output"];
-          circuit[root/"outputs"/output/"y"] -= 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "output")
+        { std::string output = context[ROOT/"highlight"/"output"];
+          circuit[ROOT/"outputs"/output/"y"] -= 1; that->redraw(); }
           
-        if (context[root/"highlight"/"type"] == "unit")
-        { std::string unit = context[root/"highlight"/"unit"];
-          circuit[root/"units"/unit/"y"] -= 1; that->redraw(); } } }
-    else { context[root/"cursor pos"/"y"] -= 1; bus(IM("cursor update")); } }
+        if (context[ROOT/"highlight"/"type"] == "unit")
+        { std::string unit = context[ROOT/"highlight"/"unit"];
+          circuit[ROOT/"units"/unit/"y"] -= 1; that->redraw(); } } }
+    else { context[ROOT/"cursor pos"/"y"] -= 1; bus(IM("cursor update")); } }
 
   else if (mess == "down")
-  { if ((int)context(root/"shift"))
-    { context[root/"draw pos"/"y"] += 1; that->redraw(); }
-    else if ((int)context(root/"control"))
-    { context[root/"grid size"] -= 5;
-      if ((int)context[root/"grid size"] < 5)
-      { context[root/"grid size"] = 5; }
+  { if ((int)context(ROOT/"shift"))
+    { context[ROOT/"draw pos"/"y"] += 1; that->redraw(); }
+    else if ((int)context(ROOT/"control"))
+    { context[ROOT/"grid size"] -= 5;
+      if ((int)context[ROOT/"grid size"] < 5)
+      { context[ROOT/"grid size"] = 5; }
       that->redraw(); }
-    else if ((int)context(root/"space"))
-    { if (context[root/"edit mode"] == "normal" &&
-          !!context(root/"highlight"))
-      { if (context[root/"highlight"/"type"] == "wire point")
-        { std::string wire = context[root/"highlight"/"wire"];
-          std::string point = context[root/"highlight"/"point"];
-          circuit[root/"wires"/wire/point/"y"] += 1; that->redraw(); }
+    else if ((int)context(ROOT/"space"))
+    { if (context[ROOT/"edit mode"] == "normal" &&
+          !!context(ROOT/"highlight"))
+      { if (context[ROOT/"highlight"/"type"] == "wire point")
+        { std::string wire = context[ROOT/"highlight"/"wire"];
+          std::string point = context[ROOT/"highlight"/"point"];
+          circuit[ROOT/"wires"/wire/point/"y"] += 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "input")
-        { std::string input = context[root/"highlight"/"input"];
-          circuit[root/"inputs"/input/"y"] += 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "input")
+        { std::string input = context[ROOT/"highlight"/"input"];
+          circuit[ROOT/"inputs"/input/"y"] += 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "output")
-        { std::string output = context[root/"highlight"/"output"];
-          circuit[root/"outputs"/output/"y"] += 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "output")
+        { std::string output = context[ROOT/"highlight"/"output"];
+          circuit[ROOT/"outputs"/output/"y"] += 1; that->redraw(); }
 
-        if (context[root/"highlight"/"type"] == "unit")
-        { std::string unit = context[root/"highlight"/"unit"];
-          circuit[root/"units"/unit/"y"] += 1; that->redraw(); } } }
-    else { context[root/"cursor pos"/"y"] += 1; bus(IM("cursor update")); } }
+        if (context[ROOT/"highlight"/"type"] == "unit")
+        { std::string unit = context[ROOT/"highlight"/"unit"];
+          circuit[ROOT/"units"/unit/"y"] += 1; that->redraw(); } } }
+    else { context[ROOT/"cursor pos"/"y"] += 1; bus(IM("cursor update")); } }
 
   else if (mess == "left")
-  { if ((int)context(root/"shift"))
-    { context[root/"draw pos"/"x"] -= 1; that->redraw(); }
-    else if ((int)context(root/"space"))
-    { if (context[root/"edit mode"] == "normal" &&
-          !!context(root/"highlight"))
-      { if (context[root/"highlight"/"type"] == "wire point")
-        { std::string wire = context[root/"highlight"/"wire"];
-          std::string point = context[root/"highlight"/"point"];
-          circuit[root/"wires"/wire/point/"x"] -= 1; that->redraw(); } 
+  { if ((int)context(ROOT/"shift"))
+    { context[ROOT/"draw pos"/"x"] -= 1; that->redraw(); }
+    else if ((int)context(ROOT/"space"))
+    { if (context[ROOT/"edit mode"] == "normal" &&
+          !!context(ROOT/"highlight"))
+      { if (context[ROOT/"highlight"/"type"] == "wire point")
+        { std::string wire = context[ROOT/"highlight"/"wire"];
+          std::string point = context[ROOT/"highlight"/"point"];
+          circuit[ROOT/"wires"/wire/point/"x"] -= 1; that->redraw(); } 
       
-        if (context[root/"highlight"/"type"] == "input")
-        { std::string input = context[root/"highlight"/"input"];
-          circuit[root/"inputs"/input/"x"] -= 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "input")
+        { std::string input = context[ROOT/"highlight"/"input"];
+          circuit[ROOT/"inputs"/input/"x"] -= 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "output")
-        { std::string output = context[root/"highlight"/"output"];
-          circuit[root/"outputs"/output/"x"] -= 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "output")
+        { std::string output = context[ROOT/"highlight"/"output"];
+          circuit[ROOT/"outputs"/output/"x"] -= 1; that->redraw(); }
           
-        if (context[root/"highlight"/"type"] == "unit")
-        { std::string unit = context[root/"highlight"/"unit"];
-          circuit[root/"units"/unit/"x"] -= 1; that->redraw(); } } }
-    else { context[root/"cursor pos"/"x"] -= 1; bus(IM("cursor update")); } }
+        if (context[ROOT/"highlight"/"type"] == "unit")
+        { std::string unit = context[ROOT/"highlight"/"unit"];
+          circuit[ROOT/"units"/unit/"x"] -= 1; that->redraw(); } } }
+    else { context[ROOT/"cursor pos"/"x"] -= 1; bus(IM("cursor update")); } }
 
   else if (mess == "right")
-  { if ((int)context(root/"shift"))
-    { context[root/"draw pos"/"x"] += 1; that->redraw(); }
-    else if ((int)context(root/"space"))
-    { if (context[root/"edit mode"] == "normal" &&
-          !!context(root/"highlight"))
-      { if (context[root/"highlight"/"type"] == "wire point")
-        { std::string wire = context[root/"highlight"/"wire"];
-          std::string point = context[root/"highlight"/"point"];
-          circuit[root/"wires"/wire/point/"x"] += 1; that->redraw(); }
+  { if ((int)context(ROOT/"shift"))
+    { context[ROOT/"draw pos"/"x"] += 1; that->redraw(); }
+    else if ((int)context(ROOT/"space"))
+    { if (context[ROOT/"edit mode"] == "normal" &&
+          !!context(ROOT/"highlight"))
+      { if (context[ROOT/"highlight"/"type"] == "wire point")
+        { std::string wire = context[ROOT/"highlight"/"wire"];
+          std::string point = context[ROOT/"highlight"/"point"];
+          circuit[ROOT/"wires"/wire/point/"x"] += 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "input")
-        { std::string input = context[root/"highlight"/"input"];
-          circuit[root/"inputs"/input/"x"] += 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "input")
+        { std::string input = context[ROOT/"highlight"/"input"];
+          circuit[ROOT/"inputs"/input/"x"] += 1; that->redraw(); }
       
-        if (context[root/"highlight"/"type"] == "output")
-        { std::string output = context[root/"highlight"/"output"];
-          circuit[root/"outputs"/output/"x"] += 1; that->redraw(); }
+        if (context[ROOT/"highlight"/"type"] == "output")
+        { std::string output = context[ROOT/"highlight"/"output"];
+          circuit[ROOT/"outputs"/output/"x"] += 1; that->redraw(); }
 
-        if (context[root/"highlight"/"type"] == "unit")
-        { std::string unit = context[root/"highlight"/"unit"];
-          circuit[root/"units"/unit/"x"] += 1; that->redraw(); } } }
-    else { context[root/"cursor pos"/"x"] += 1; bus(IM("cursor update")); } }
+        if (context[ROOT/"highlight"/"type"] == "unit")
+        { std::string unit = context[ROOT/"highlight"/"unit"];
+          circuit[ROOT/"units"/unit/"x"] += 1; that->redraw(); } } }
+    else { context[ROOT/"cursor pos"/"x"] += 1; bus(IM("cursor update")); } }
 
   else if (mess == "screen update") { that->redraw(); }
 
   else if (mess == "cursor update")
   { bool highlight = false;
-    int cx = context[root/"cursor pos"/"x"];
-    int cy = context[root/"cursor pos"/"y"];
+    int cx = context[ROOT/"cursor pos"/"x"];
+    int cy = context[ROOT/"cursor pos"/"y"];
 
     if (!highlight)
-    { for (std::string wire : circuit.ls(root/"wires"))
-      { if (cx == (int)circuit[root/"wires"/wire/0/"x"] &&
-            cy == (int)circuit[root/"wires"/wire/0/"y"])
-        { context[root/"highlight"/"type"] = "wire point";
-          context[root/"highlight"/"wire"] = wire;
-          context[root/"highlight"/"point"] = "0";
+    { for (std::string wire : circuit.ls(ROOT/"wires"))
+      { if (cx == (int)circuit[ROOT/"wires"/wire/0/"x"] &&
+            cy == (int)circuit[ROOT/"wires"/wire/0/"y"])
+        { context[ROOT/"highlight"/"type"] = "wire point";
+          context[ROOT/"highlight"/"wire"] = wire;
+          context[ROOT/"highlight"/"point"] = "0";
           highlight = true; break; }
 
-        else if (cx == (int)circuit[root/"wires"/wire/1/"x"] &&
-                 cy == (int)circuit[root/"wires"/wire/1/"y"])
-        { context[root/"highlight"/"type"] = "wire point";
-          context[root/"highlight"/"wire"] = wire;
-          context[root/"highlight"/"point"] = "1";
+        else if (cx == (int)circuit[ROOT/"wires"/wire/1/"x"] &&
+                 cy == (int)circuit[ROOT/"wires"/wire/1/"y"])
+        { context[ROOT/"highlight"/"type"] = "wire point";
+          context[ROOT/"highlight"/"wire"] = wire;
+          context[ROOT/"highlight"/"point"] = "1";
           highlight = true; break; } } }
 
     if (!highlight)
-    { for (std::string input : circuit.ls(root/"inputs"))
-      { if (cx == (int)circuit[root/"inputs"/input/"x"] &&
-            cy == (int)circuit[root/"inputs"/input/"y"])
-        { context[root/"highlight"/"type"] = "input";
-          context[root/"highlight"/"input"] = input;
+    { for (std::string input : circuit.ls(ROOT/"inputs"))
+      { if (cx == (int)circuit[ROOT/"inputs"/input/"x"] &&
+            cy == (int)circuit[ROOT/"inputs"/input/"y"])
+        { context[ROOT/"highlight"/"type"] = "input";
+          context[ROOT/"highlight"/"input"] = input;
           highlight = true; break; } } }
 
     if (!highlight)
-    { for (std::string output : circuit.ls(root/"outputs"))
-      { if (cx == (int)circuit[root/"outputs"/output/"x"] &&
-            cy == (int)circuit[root/"outputs"/output/"y"])
-        { context[root/"highlight"/"type"] = "output";
-          context[root/"highlight"/"output"] = output;
+    { for (std::string output : circuit.ls(ROOT/"outputs"))
+      { if (cx == (int)circuit[ROOT/"outputs"/output/"x"] &&
+            cy == (int)circuit[ROOT/"outputs"/output/"y"])
+        { context[ROOT/"highlight"/"type"] = "output";
+          context[ROOT/"highlight"/"output"] = output;
           highlight = true; break; } } }
 
     if (!highlight)
-    { for (std::string unit : circuit.ls(root/"units"))
-      { if (cx == (int)circuit[root/"units"/unit/"x"] &&
-            cy == (int)circuit[root/"units"/unit/"y"])
-        { context[root/"highlight"/"type"] = "unit";
-          context[root/"highlight"/"unit"] = unit;
+    { for (std::string unit : circuit.ls(ROOT/"units"))
+      { if (cx == (int)circuit[ROOT/"units"/unit/"x"] &&
+            cy == (int)circuit[ROOT/"units"/unit/"y"])
+        { context[ROOT/"highlight"/"type"] = "unit";
+          context[ROOT/"highlight"/"unit"] = unit;
           highlight = true; break; } } }
 
-    if (!highlight) { context.del(root/"highlight"); } that->redraw(); }
+    if (!highlight) { context.del(ROOT/"highlight"); } that->redraw(); }
 
   else if (mess == "place wire press")
-  { int s = context.ls(root/"current wire").size();
-    context[root/"current wire"/s/"x"] = context[root/"cursor pos"/"x"];
-    context[root/"current wire"/s/"y"] = context[root/"cursor pos"/"y"];
+  { int s = context.ls(ROOT/"current wire").size();
+    context[ROOT/"current wire"/s/"x"] = context[ROOT/"cursor pos"/"x"];
+    context[ROOT/"current wire"/s/"y"] = context[ROOT/"cursor pos"/"y"];
 
     if (s == 1)
-    { circuit[root/"wires"];
-      std::list<std::string> wires = circuit.ls(root/"wires");
+    { circuit[ROOT/"wires"];
+      std::list<std::string> wires = circuit.ls(ROOT/"wires");
       int idx = wires.size() ? std::stoi(wires.back()) + 1 : 0;
-      circuit[root/"wires"/idx];
-      context.cp(root/"current wire", root/"wires"/idx, &circuit);
-      context.mv(root/"current wire"/1, root/"current wire"/0);
+      circuit[ROOT/"wires"/idx];
+      context.cp(ROOT/"current wire", ROOT/"wires"/idx, &circuit);
+      context.mv(ROOT/"current wire"/1, ROOT/"current wire"/0);
       that->redraw(); } }
 
   else if (mess == "place input press")
-  { circuit[root/"inputs"];
-    std::list<std::string> inputs = circuit.ls(root/"inputs");
+  { circuit[ROOT/"inputs"];
+    std::list<std::string> inputs = circuit.ls(ROOT/"inputs");
     int idx = inputs.size() ? std::stoi(inputs.back()) + 1 : 0;
-    circuit[root/"inputs"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"inputs"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"inputs"/idx/"name"] =
+    circuit[ROOT/"inputs"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"inputs"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"inputs"/idx/"name"] =
       std::string("I_").append(std::to_string(idx));
     that->redraw(); }
 
   else if (mess == "place output press")
-  { circuit[root/"outputs"];
-    std::list<std::string> outputs = circuit.ls(root/"outputs");
+  { circuit[ROOT/"outputs"];
+    std::list<std::string> outputs = circuit.ls(ROOT/"outputs");
     int idx = outputs.size() ? std::stoi(outputs.back()) + 1 : 0;
-    circuit[root/"outputs"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"outputs"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"outputs"/idx/"name"] =
+    circuit[ROOT/"outputs"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"outputs"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"outputs"/idx/"name"] =
       std::string("O_").append(std::to_string(idx));
     that->redraw(); }
 
   else if (mess == "place const press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "constant";
-    circuit[root/"units"/idx/"value"] = 1.0f;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "constant";
+    circuit[ROOT/"units"/idx/"value"] = 1.0f;
     that->redraw(); }
     
   else if (mess == "place delay press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "delay";
-    circuit[root/"units"/idx/"value"] = 1;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "delay";
+    circuit[ROOT/"units"/idx/"value"] = 1;
     that->redraw(); }
     
   else if (mess == "place sum press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "sum";
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "sum";
     that->redraw(); }
   
   else if (mess == "place prod press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "product";
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "product";
     that->redraw(); }
     
   else if (mess == "place function press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "function";
-    circuit[root/"units"/idx/"function name"] = "";
-    circuit[root/"units"/idx/"numerator poly"] = "1;";
-    circuit[root/"units"/idx/"denominator poly"] = "1;";
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "function";
+    circuit[ROOT/"units"/idx/"function name"] = "";
+    circuit[ROOT/"units"/idx/"numerator poly"] = "1;";
+    circuit[ROOT/"units"/idx/"denominator poly"] = "1;";
     that->redraw(); }
     
   else if (mess == "place code block press")
-  { circuit[root/"units"];
-    std::list<std::string> units = circuit.ls(root/"units");
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
     int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[root/"units"/idx/"x"] = context[root/"cursor pos"/"x"];
-    circuit[root/"units"/idx/"y"] = context[root/"cursor pos"/"y"];
-    circuit[root/"units"/idx/"type"] = "code block";
-    circuit[root/"units"/idx/"source file"] = "";
-    circuit[root/"units"/idx/"function name"] = "";
-    circuit[root/"units"/idx/"inputs names"] = "";
-    circuit[root/"units"/idx/"outputs names"] = "";
-    circuit[root/"units"/idx/"context size"] = 0; }
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "code block";
+    circuit[ROOT/"units"/idx/"source file"] = "";
+    circuit[ROOT/"units"/idx/"function name"] = "";
+    circuit[ROOT/"units"/idx/"inputs names"] = "";
+    circuit[ROOT/"units"/idx/"outputs names"] = "";
+    circuit[ROOT/"units"/idx/"context size"] = 0; }
 }  

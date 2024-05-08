@@ -7,7 +7,7 @@
 #define IM independency::message
 #define IC independency::callback
 #define IP independency::path
-#define root IP()
+#define ROOT IP()
 
 #include <cstdio>
 
