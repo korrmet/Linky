@@ -7,22 +7,48 @@
 #include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Button.H>
 #include "app.hpp"
+#include <vector>
+#include <list>
 
 namespace simulator {
 
+// ---> simulation input parameters
+struct params
+{ std::string circuit_name;
+  std::list <std::string> inputs;
+  std::list <std::string> outputs;
+  std::list <std::string> sources; };
+// <---
+
+// ---> simulation output chart
 class chart : public Fl_Widget
 { public:
   chart(int x, int y, int w, int h);
-  virtual void draw() override; };
+  virtual void draw() override;
+  void clear();
+  
+  struct point { float x; float y; };
+  struct line { unsigned int color; std::vector <point> points; };
+  std::list <line> lines;
+  std::list <float> x_markers, y_markers;
+  float x_min, x_max, y_min, y_max;
 
+  private:
+  int x_screen(float x_real);
+  int y_screen(float y_real); };
+// <---
+
+// ---> simulator window
 class window : public Fl_Window
 { public:
-  window();
+  window(struct params sim_params);
 
   virtual void resize(int x, int y, int w, int h);
   chart ch; Fl_Text_Editor params; Fl_Text_Buffer buf; Fl_Button run_btn;
 
   private:
+  struct params sim_params;
+
   struct signal
   { signal();
     void clear();
@@ -43,12 +69,16 @@ class window : public Fl_Window
 
   std::list <signal> signals;
   std::list <line> lines;
-  std::list <float> markers;
-  float start;
-  float stop;
+  std::list <float> x_markers;
+  std::list <float> y_markers;
+  float x_max, x_min, y_max, y_min;
   float Ts;
+  
+  static void run_btn_cb(Fl_Widget* w, void* arg);
 
   void parse(std::string str); };
+// <---
+
 }
 
 #endif // SIMULATOR_HPP

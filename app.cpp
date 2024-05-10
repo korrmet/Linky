@@ -30,7 +30,12 @@ int main(int argc, char** argv)
     return 0; }
 
   editor::window main_window;
-  simulator::window sim;
+  simulator::params sp;
+  sp.inputs.push_back("i0");
+  sp.outputs.push_back("o0");
+  sp.outputs.push_back("o1");
+  sp.outputs.push_back("o2");
+  simulator::window sim(sp);
   sim.show();
   Fl::run(); return 0; }
 
