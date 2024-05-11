@@ -55,7 +55,8 @@ class window : public Fl_Window
     std::string input_name;
     std::string type;
     float delay;
-    float amplitude;
+    float v_min;
+    float v_max;
     float period;
     float width;
     float ratio; };

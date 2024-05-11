@@ -1,4 +1,5 @@
 #include "simulator.hpp"
+#include <cmath>
 
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
@@ -8,6 +9,7 @@
 #define WHITE 0xFFFFFF00
 
 #define CSIZE 5
+#define PI 3.141592654
 
 class simulation_database
 { public:
@@ -17,8 +19,7 @@ class simulation_database
 
   ~simulation_database()
   { for (io_data& item : inputs ) { delete[] item.values; }
-    for (io_data& item : outputs) { delete[] item.values; }
-  }
+    for (io_data& item : outputs) { delete[] item.values; } }
 
   bool has_i(std::string name)
   { for (io_data& item : inputs) { if (item.name == name) { return true; } }
@@ -27,6 +28,7 @@ class simulation_database
   io_data& i(std::string name)
   { for (io_data& item : inputs) { if (item.name == name) { return item; } }
     io_data new_item = { .name = name, .values = new float[_size] };
+    for (unsigned int i = 0; i < _size; i++) { new_item.values[i] = 0; }
     inputs.push_back(new_item);
     return inputs.back(); }
 
@@ -37,6 +39,7 @@ class simulation_database
   io_data& o(std::string name)
   { for (io_data& item : outputs) { if (item.name ==name) { return item; } }
     io_data new_item = { .name = name, .values = new float[_size] };
+    for (unsigned int i = 0; i < _size; i++) { new_item.values[i] = 0; }
     outputs.push_back(new_item);
     return outputs.back(); }
 
@@ -47,10 +50,59 @@ class simulation_database
   std::list <io_data> inputs, outputs; };
 
 // ---> signals generators
-float sine(float delay, float amp, float period, float x) { return 0; }
-float step(float delay, float y0, float y1, float x) { return 0; }
-float delta(float delay, float y0, float y1, float x) { return 0; }
-float meander(float delay, float amp, float period, float ratio, float x) { return 0; }
+// ---> sine
+float
+sine(float delay, float period, float v_min, float v_max, float x)
+{ if (x < delay) { return v_min; }
+  float amplitude = v_max - v_min;
+  float k = 2 * PI / period;
+  return std::sin(k * (x - delay)); }
+// <---
+
+// ---> single step
+float
+step(float delay, float v_min, float v_max, float x)
+{ if (x < delay) { return v_min; } return v_max; }
+// <---
+
+// ---> dirac delta function
+float
+delta(float delay, float width, float v_min, float v_max, float x)
+{ if (x >= delay && x < delay + width) { return v_max; } return v_min; }
+// <---
+
+// ---> meander
+float
+meander(float delay, float period, float ratio, float v_min, float v_max,
+        float x)
+{ if (x < delay) { return v_min; }
+  int period_num = (x - delay) / period;
+  float x_rel = x - delay - period_num * period;
+  if (x_rel < period * ratio) { return v_max; }
+  return v_min; }
+// <---
+
+// ---> sawtooth "/|"
+float
+sawtooth(float delay, float period, float v_min, float v_max, float x)
+{ if (x < delay) { return v_min; }
+  int period_num = (x - delay) / period;
+  float x_rel = x - delay - period_num * period;
+  float amplitude = v_max - v_min;
+  float y = v_min + amplitude * (x_rel / period);
+  return y; }
+// <---
+
+// ---> reverse sawtooth "|\"
+float
+rsawtooth(float delay, float period, float v_min, float v_max, float x)
+{ if (x < delay) { return v_min; }
+  int period_num = (x - delay) / period;
+  float x_rel = x - delay - period_num * period;
+  float amplitude = v_max - v_min;
+  float y = v_max - amplitude * (x_rel / period);
+  return y; }
+// <---
 // <---
 
 // ---> chart constructor
@@ -136,13 +188,13 @@ void simulator::window::resize(int x, int y, int w, int h)
 
 // ---> simulator signal constructor
 simulator::window::signal::signal()
-: delay(0), amplitude(0), period(0), width(0), ratio(0) {}
+: delay(0), v_min(0), v_max(0), period(0), width(0), ratio(0) {}
 // <---
 
 // ---> simulator signal clear
 void simulator::window::signal::clear()
 { input_name.clear(); type.clear();
-  delay = 0; amplitude = 0; period = 0; width = 0; ratio = 0; }
+  delay = 0; v_min = 0; v_max = 0; period = 0; width = 0; ratio = 0; }
 // <---
 
 // ---> simulator line constructor
@@ -157,45 +209,56 @@ void simulator::window::line::clear()
 // ---> run button callback
 void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
 { window* that = (window*)arg;
-  that->x_max = 0; that->x_min = 0;
-  that->y_max = 0; that->y_min = 0;
-  that->Ts = 0;
+  // that->x_max = 0; that->x_min = 0;
+  // that->y_max = 0; that->y_min = 0;
+  // that->Ts = 0;
+  // that->parse(that->buf.text());
+  // 
+  // that->ch.x_min = that->x_min;
+  // that->ch.x_max = that->x_max;
+  // that->ch.y_min = that->y_min;
+  // that->ch.y_max = that->y_max;
+
+  // that->ch.x_markers.clear();
+  // that->ch.y_markers.clear();
+
+  // for (float m : that->x_markers) { that->ch.x_markers.push_back(m); }
+  // for (float m : that->y_markers) { that->ch.y_markers.push_back(m); }
+
+  // chart::line l;
+  // chart::point p;
+
+  // l.color = 0xFF000000;
+  // p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
+  // p.x = 1 * that->Ts; p.y = 1; l.points.push_back(p);
+  // p.x = 2 * that->Ts; p.y = 1; l.points.push_back(p);
+  // p.x = 3 * that->Ts; p.y = 1; l.points.push_back(p);
+  // that->ch.lines.push_back(l); l.points.clear();
+
+  // l.color = 0x00FF0000;
+  // p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
+  // p.x = 1 * that->Ts; p.y = 2; l.points.push_back(p);
+  // p.x = 2 * that->Ts; p.y = 4; l.points.push_back(p);
+  // p.x = 3 * that->Ts; p.y = 8; l.points.push_back(p);
+  // that->ch.lines.push_back(l); l.points.clear();
+
+  // l.color = 0x0000FF00;
+  // p.x = 0 * that->Ts; p.y = 1;  l.points.push_back(p);
+  // p.x = 1 * that->Ts; p.y = 3;  l.points.push_back(p);
+  // p.x = 2 * that->Ts; p.y = 9;  l.points.push_back(p);
+  // p.x = 3 * that->Ts; p.y = 21; l.points.push_back(p);
+  // that->ch.lines.push_back(l); l.points.clear();
+
+  that->lines.clear(); that->ch.lines.clear();
   that->parse(that->buf.text());
-  
-  that->ch.x_min = that->x_min;
-  that->ch.x_max = that->x_max;
-  that->ch.y_min = that->y_min;
-  that->ch.y_max = that->y_max;
-
-  that->ch.x_markers.clear();
-  that->ch.y_markers.clear();
-
-  for (float m : that->x_markers) { that->ch.x_markers.push_back(m); }
-  for (float m : that->y_markers) { that->ch.y_markers.push_back(m); }
-
-  chart::line l;
-  chart::point p;
-
-  l.color = 0xFF000000;
-  p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
-  p.x = 1 * that->Ts; p.y = 1; l.points.push_back(p);
-  p.x = 2 * that->Ts; p.y = 1; l.points.push_back(p);
-  p.x = 3 * that->Ts; p.y = 1; l.points.push_back(p);
-  that->ch.lines.push_back(l); l.points.clear();
-
-  l.color = 0x00FF0000;
-  p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
-  p.x = 1 * that->Ts; p.y = 2; l.points.push_back(p);
-  p.x = 2 * that->Ts; p.y = 4; l.points.push_back(p);
-  p.x = 3 * that->Ts; p.y = 8; l.points.push_back(p);
-  that->ch.lines.push_back(l); l.points.clear();
-
-  l.color = 0x0000FF00;
-  p.x = 0 * that->Ts; p.y = 1;  l.points.push_back(p);
-  p.x = 1 * that->Ts; p.y = 3;  l.points.push_back(p);
-  p.x = 2 * that->Ts; p.y = 9;  l.points.push_back(p);
-  p.x = 3 * that->Ts; p.y = 21; l.points.push_back(p);
-  that->ch.lines.push_back(l); l.points.clear();
+/*
+parameters:x_min=0;x_max=10;y_min=-1;y_max=1;endpoint=10;Ts=0.01;
+y_markers:0;
+signal:name=I_0;type=sine;period=2;v_min=-1;v_max=1;
+line:name=I_0;type=input;color=FFFFFF;
+*/
+  // for debug purposes
+  that->sim_params.inputs.push_back("I_0");
 
   // ---> preparing simulation database
   simulation_database sim_base((that->endpoint / that->Ts) + 1);
@@ -206,6 +269,25 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
   // ---> fill database with the input signals
   for (signal& s : that->signals)
   { if (!sim_base.has_i(s.input_name)) { continue; }
+    
+    for (unsigned int i = 0; i * that->Ts < that->endpoint; i++)
+    { float x = that->Ts * i;
+      float y = 0;
+      if (s.type == "sine")
+      { y = sine(s.delay, s.period, s.v_min, s.v_max, x); }
+      else if (s.type == "step")
+      { y = step(s.delay, s.v_min, s.v_max, x); }
+      else if (s.type == "delta")
+      { y = delta(s.delay, s.width, s.v_min, s.v_max, x); }
+      else if (s.type == "meander")
+      { y = meander(s.delay, s.period, s.ratio, s.v_min, s.v_max, x); }
+      else if (s.type == "sawtooth")
+      { y = sawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
+      else if (s.type == "rsawtooth")
+      { y = rsawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
+
+      sim_base.i(s.input_name).values[i] = y;
+    }
   }
   // <---
   
@@ -222,6 +304,34 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
   // <---
 
   // ---> push the simulation data to the chart
+  for (line& l : that->lines)
+  { chart::line chl;
+    chl.color = l.rgb_color;
+    if (l.type == "input" && sim_base.has_i(l.name))
+    { for (unsigned int i = 0; i < sim_base.size(); i++)
+      { chart::point p = { .x = i * that->Ts,
+                           .y = sim_base.i(l.name).values[i] };
+        chl.points.push_back(p); } }
+    else if (l.type == "output" && sim_base.has_o(l.name))
+    { for (unsigned int i = 0; i < sim_base.size(); i++)
+      { chart::point p = { .x = i * that->Ts,
+                           .y = sim_base.i(l.name).values[i] };
+        chl.points.push_back(p); } }
+
+    that->ch.lines.push_back(chl); }
+  // <---
+  
+  // ---> preparing chart to display
+  that->ch.x_min = that->x_min;
+  that->ch.x_max = that->x_max;
+  that->ch.y_min = that->y_min;
+  that->ch.y_max = that->y_max;
+
+  that->ch.x_markers.clear();
+  that->ch.y_markers.clear();
+
+  for (float m : that->x_markers) { that->ch.x_markers.push_back(m); }
+  for (float m : that->y_markers) { that->ch.y_markers.push_back(m); }
   // <---
 
   that->ch.redraw(); }
@@ -258,13 +368,14 @@ void simulator::window::parse(std::string str)
       { float marker = std::stof(cwd); y_markers.push_back(marker); }
 
       else if (com == "signal")
-      { if      (par == "name"     ) { csg.input_name = cwd; }
-        else if (par == "type"     ) { csg.type = cwd; }
-        else if (par == "delay"    ) { csg.delay = std::stof(cwd); }
-        else if (par == "amplitude") { csg.amplitude = std::stof(cwd); }
-        else if (par == "period"   ) { csg.period = std::stof(cwd); }
-        else if (par == "width"    ) { csg.width = std::stof(cwd); }
-        else if (par == "ratio"    ) { csg.ratio = std::stof(cwd); } }
+      { if      (par == "name"  ) { csg.input_name = cwd; }
+        else if (par == "type"  ) { csg.type = cwd; }
+        else if (par == "delay" ) { csg.delay = std::stof(cwd); }
+        else if (par == "v_min" ) { csg.v_min = std::stof(cwd); }
+        else if (par == "v_max" ) { csg.v_max = std::stof(cwd); }
+        else if (par == "period") { csg.period = std::stof(cwd); }
+        else if (par == "width" ) { csg.width = std::stof(cwd); }
+        else if (par == "ratio" ) { csg.ratio = std::stof(cwd); } }
 
       else if (com == "line")
       { if      (par == "name" ) { cln.name = cwd; }
