@@ -17,7 +17,7 @@ struct params
 { std::string circuit_name;
   std::list <std::string> inputs;
   std::list <std::string> outputs;
-  std::list <std::string> sources; };
+  std::list <std::string> source_files; };
 // <---
 
 // ---> simulation output chart
@@ -71,7 +71,7 @@ class window : public Fl_Window
   std::list <line> lines;
   std::list <float> x_markers;
   std::list <float> y_markers;
-  float x_max, x_min, y_max, y_min;
+  float x_max, x_min, y_max, y_min; float endpoint;
   float Ts;
   
   static void run_btn_cb(Fl_Widget* w, void* arg);
