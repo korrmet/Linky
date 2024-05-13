@@ -1,5 +1,7 @@
 #include "simulator.hpp"
 #include <cmath>
+#include <cstdlib>
+#include <dlfcn.h>
 
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
@@ -11,9 +13,22 @@
 #define CSIZE 5
 #define PI 3.141592654
 
-extern "C" {
-extern void harness(float* inputs, float* outputs, float* context);
-}
+// ---> string printf
+#include <cstdio>
+#include <string>
+#include <cstdarg>
+inline void print(std::string& s, const char* fmt, ...)
+{ std::string tmp;
+  va_list args, args2;
+  va_start(args, fmt);
+  va_copy(args2, args);
+  tmp.resize(vsnprintf(nullptr, 0, fmt, args2) + 1);
+  va_end(args2);
+  vsprintf(tmp.data(), fmt, args);
+  va_end(args);
+  tmp.pop_back();
+  s.append(tmp); }
+// <---
 
 class simulation_database
 { public:
@@ -243,18 +258,28 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
       else if (s.type == "rsawtooth")
       { y = rsawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
 
-      sim_base.i(s.input_name).values[i] = y;
-    }
-  }
-  // <---
-  
-  // ---> generating simulation harness source file
+      sim_base.i(s.input_name).values[i] = y; } }
   // <---
 
   // ---> compiling the sources to the shared library for simulation core
+  std::string compile_code;
+  print(compile_code, "gcc ");
+  for (std::string sfile : that->sim_params.source_files)
+  { print(compile_code, "%s ", sfile.c_str()); }
+  print(compile_code, "-o sim.so -fPIC -shared",
+        that->sim_params.circuit_name.c_str());
+  // TODO: check the result and handle
+  PRINT("system = %d\n", std::system(compile_code.c_str()));
   // <---
 
   // ---> loading compiled library
+  void* sim_handle = dlopen("./sim.so", RTLD_LAZY);
+  void (*sim_func)(float* inputs, float* ouputs, float* context)
+    = (void (*)(float*, float*, float*))
+      dlsym(sim_handle, that->sim_params.circuit_name.c_str());
+  // TODO: check the pointers and handle
+  PRINT("sim_handle = %p\n", sim_handle);
+  PRINT("sim_func = %p\n", sim_func);
   // <---
 
   // ---> run the simulation using signals values
@@ -277,7 +302,7 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
     { i_array[ctr] = sim_base.i(input).values[i]; ctr++; }
     
     // run the code
-    harness(i_array, o_array, c_array);
+    sim_func(i_array, o_array, c_array);
     
     // copy all of the output values to the i-th outputs from the simulation
     // database
