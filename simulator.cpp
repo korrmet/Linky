@@ -11,6 +11,10 @@
 #define CSIZE 5
 #define PI 3.141592654
 
+extern "C" {
+extern void harness(float* inputs, float* outputs, float* context);
+}
+
 class simulation_database
 { public:
   struct io_data { std::string name; float* values; };
@@ -209,56 +213,9 @@ void simulator::window::line::clear()
 // ---> run button callback
 void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
 { window* that = (window*)arg;
-  // that->x_max = 0; that->x_min = 0;
-  // that->y_max = 0; that->y_min = 0;
-  // that->Ts = 0;
-  // that->parse(that->buf.text());
-  // 
-  // that->ch.x_min = that->x_min;
-  // that->ch.x_max = that->x_max;
-  // that->ch.y_min = that->y_min;
-  // that->ch.y_max = that->y_max;
-
-  // that->ch.x_markers.clear();
-  // that->ch.y_markers.clear();
-
-  // for (float m : that->x_markers) { that->ch.x_markers.push_back(m); }
-  // for (float m : that->y_markers) { that->ch.y_markers.push_back(m); }
-
-  // chart::line l;
-  // chart::point p;
-
-  // l.color = 0xFF000000;
-  // p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
-  // p.x = 1 * that->Ts; p.y = 1; l.points.push_back(p);
-  // p.x = 2 * that->Ts; p.y = 1; l.points.push_back(p);
-  // p.x = 3 * that->Ts; p.y = 1; l.points.push_back(p);
-  // that->ch.lines.push_back(l); l.points.clear();
-
-  // l.color = 0x00FF0000;
-  // p.x = 0 * that->Ts; p.y = 1; l.points.push_back(p);
-  // p.x = 1 * that->Ts; p.y = 2; l.points.push_back(p);
-  // p.x = 2 * that->Ts; p.y = 4; l.points.push_back(p);
-  // p.x = 3 * that->Ts; p.y = 8; l.points.push_back(p);
-  // that->ch.lines.push_back(l); l.points.clear();
-
-  // l.color = 0x0000FF00;
-  // p.x = 0 * that->Ts; p.y = 1;  l.points.push_back(p);
-  // p.x = 1 * that->Ts; p.y = 3;  l.points.push_back(p);
-  // p.x = 2 * that->Ts; p.y = 9;  l.points.push_back(p);
-  // p.x = 3 * that->Ts; p.y = 21; l.points.push_back(p);
-  // that->ch.lines.push_back(l); l.points.clear();
 
   that->lines.clear(); that->ch.lines.clear();
   that->parse(that->buf.text());
-/*
-parameters:x_min=0;x_max=10;y_min=-1;y_max=1;endpoint=10;Ts=0.01;
-y_markers:0;
-signal:name=I_0;type=sine;period=2;v_min=-1;v_max=1;
-line:name=I_0;type=input;color=FFFFFF;
-*/
-  // for debug purposes
-  that->sim_params.inputs.push_back("I_0");
 
   // ---> preparing simulation database
   simulation_database sim_base((that->endpoint / that->Ts) + 1);
@@ -301,6 +258,32 @@ line:name=I_0;type=input;color=FFFFFF;
   // <---
 
   // ---> run the simulation using signals values
+  float i_array[that->sim_params.inputs.size()];
+  for (unsigned int i = 0; i < that->sim_params.inputs.size(); i++)
+  { i_array[i] = 0; }
+
+  float o_array[that->sim_params.outputs.size()];
+  for (unsigned int i = 0; i < that->sim_params.outputs.size(); i++)
+  { o_array[i] = 0; }
+
+  float c_array[that->sim_params.context_size];
+  for (unsigned int i = 0; i < that->sim_params.context_size; i++)
+  { c_array[i] = 0; }
+
+  for (unsigned int i = 0; i < sim_base.size(); i++)
+  { unsigned int ctr = 0;
+    // copy all i-th values of inputs from the simulation database
+    for (std::string input : that->sim_params.inputs)
+    { i_array[ctr] = sim_base.i(input).values[i]; ctr++; }
+    
+    // run the code
+    harness(i_array, o_array, c_array);
+    
+    // copy all of the output values to the i-th outputs from the simulation
+    // database
+    ctr = 0;
+    for (std::string output : that->sim_params.outputs)
+    { sim_base.o(output).values[i] = o_array[ctr]; ctr++; } }
   // <---
 
   // ---> push the simulation data to the chart
@@ -315,7 +298,7 @@ line:name=I_0;type=input;color=FFFFFF;
     else if (l.type == "output" && sim_base.has_o(l.name))
     { for (unsigned int i = 0; i < sim_base.size(); i++)
       { chart::point p = { .x = i * that->Ts,
-                           .y = sim_base.i(l.name).values[i] };
+                           .y = sim_base.o(l.name).values[i] };
         chl.points.push_back(p); } }
 
     that->ch.lines.push_back(chl); }

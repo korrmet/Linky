@@ -30,13 +30,29 @@ int main(int argc, char** argv)
     return 0; }
 
   editor::window main_window;
+  // ---> for debug purpose only
+/*
+parameters:x_min=0;x_max=10;y_min=-1;y_max=1;endpoint=10;Ts=0.01;
+y_markers:0;
+signal:name=I_0;type=sine;period=2;v_min=-1;v_max=1;
+line:name=I_0;type=input;color=FFFFFF;
+line:name=O_0;type=output;color=0000FF;
+line:name=O_1;type=output;color=00FFFF;
+line:name=O_2;type=output;color=00FF00;
+line:name=O_3;type=output;color=FFFF00;
+*/
   simulator::params sp;
-  sp.inputs.push_back("i0");
-  sp.outputs.push_back("o0");
-  sp.outputs.push_back("o1");
-  sp.outputs.push_back("o2");
+  sp.circuit_name = "functions";
+  sp.source_files.push_back("functions.c");
+  sp.context_size = 11;
+  sp.inputs.push_back("I_0");
+  sp.outputs.push_back("O_0");
+  sp.outputs.push_back("O_1");
+  sp.outputs.push_back("O_2");
+  sp.outputs.push_back("O_3");
   simulator::window sim(sp);
   sim.show();
+  // <---
   Fl::run(); return 0; }
 
 namespace app {

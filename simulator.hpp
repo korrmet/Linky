@@ -14,9 +14,20 @@ namespace simulator {
 
 // ---> simulation input parameters
 struct params
-{ std::string circuit_name;
-  std::list <std::string> inputs;
+{ std::string circuit_name; // equal to the function name and file name
+  
+  // size of this list is equal <name>_inputs_size macro definition
+  // position of the input inside this list is equal to the macro definitions
+  std::list <std::string> inputs; 
+
+  // size of this list is equal <name>_outputs_size macro definition
+  // position of the output inside this list is equal to the macro definitions
   std::list <std::string> outputs;
+
+  unsigned int context_size;
+
+  // list all of the files that needed to build the shared library, it MAY more
+  // than single file at least because of code blocks
   std::list <std::string> source_files; };
 // <---
 
