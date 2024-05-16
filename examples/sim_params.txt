@@ -1,0 +1,8 @@
+parameters:x_min=0;x_max=10;y_min=-1;y_max=1;endpoint=10;Ts=0.01;
+y_markers:0;
+signal:name=I_0;type=sine;period=2;v_min=-1;v_max=1;
+line:name=I_0;type=input;color=FFFFFF;
+line:name=O_0;type=output;color=0000FF;
+line:name=O_1;type=output;color=00FFFF;
+line:name=O_2;type=output;color=00FF00;
+line:name=O_3;type=output;color=FFFF00;

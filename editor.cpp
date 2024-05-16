@@ -8,6 +8,7 @@
 #include <FL/Fl_Box.H>
 #include <string>
 #include "editor.hpp"
+#include "simulator.hpp"
 #include "app.hpp"
 
 #define GREEN 0x00AC0000
@@ -228,6 +229,7 @@ class codeEditWindow : public Fl_Window
 // <---
 
 static editor::window* single_window = nullptr;
+static Fl_Button* simulate_button = nullptr;
 static Fl_Button* generate_button = nullptr;
 static Fl_Button* check_circuit_button = nullptr;
 static Fl_Button* clear_errors_button = nullptr;
@@ -241,9 +243,6 @@ static Fl_Button* sum_button = nullptr;
 static Fl_Button* prod_button = nullptr;
 static Fl_Button* function_button = nullptr;
 static Fl_Button* code_button = nullptr;
-
-// TODO: add wires points highlight when wire highlighted or wire editing mode
-// TODO: add wires to network conversion
 
 editor::workspace::workspace(int x, int y, int w, int h)
 : Fl_Widget(x, y, w, h)
@@ -847,7 +846,7 @@ void editor::workspace::draw()
   fl_line_style(0); fl_color(0); fl_pop_clip(); }
 
 editor::window::window()
-: Fl_Window(640, 480, "Linky v0"),
+: Fl_Window(640, 480),
   menu_bar(0, 0, 640, 20),
   side_screen(440, 20, 200, 460),
   wsp(0, 20, 440, 460)
@@ -855,6 +854,9 @@ editor::window::window()
   
   bus + IC(handler, this);
   size_range(640, 480);
+  std::string title = "Linky";
+  title.append(" ").append(VERSION);
+  label(title.c_str());
 
   add(menu_bar);
   add(side_screen);
@@ -880,9 +882,22 @@ editor::window::window()
   side_screen.box(FL_BORDER_BOX);
   side_screen.color(Fl_Color(WHITE));
 
-  generate_button = new Fl_Button(side_screen.x() + 5,
+  simulate_button = new Fl_Button(side_screen.x() + 5,
                                   side_screen.y() + 5,
-                                  side_screen.w() - 10,
+                                  (side_screen.w() - 10 - 5) / 2,
+                                  20, "Simulate");
+  simulate_button->box(FL_BORDER_BOX);
+  simulate_button->labelsize(12);
+  simulate_button->clear_visible_focus();
+  simulate_button->color(Fl_Color(WHITE));
+  simulate_button->color2(Fl_Color(BLUE));
+  simulate_button->callback(control_cb, (void*)"simulate");
+  side_screen.add(simulate_button);
+
+  generate_button = new Fl_Button(simulate_button->x()
+                                    + simulate_button->w() + 5,
+                                  simulate_button->y(),
+                                  simulate_button->w(),
                                   20, "Generate Code");
   generate_button->box(FL_BORDER_BOX);
   generate_button->labelsize(12);
@@ -892,10 +907,10 @@ editor::window::window()
   generate_button->callback(control_cb, (void*)"generate code");
   side_screen.add(generate_button);
 
-  check_circuit_button = new Fl_Button(generate_button->x(),
-                                       generate_button->y()
-                                         + generate_button->h() + 5,
-                                       generate_button->w(), 
+  check_circuit_button = new Fl_Button(simulate_button->x(),
+                                       simulate_button->y()
+                                         + simulate_button->h() + 5,
+                                       simulate_button->w(), 
                                        20, "Check circuit");
   check_circuit_button->box(FL_BORDER_BOX);
   check_circuit_button->labelsize(12);
@@ -905,9 +920,9 @@ editor::window::window()
   check_circuit_button->callback(control_cb, (void*)"check circuit errors");
   side_screen.add(check_circuit_button);
 
-  clear_errors_button = new Fl_Button(check_circuit_button->x(),
-                                      check_circuit_button->y()
-                                        + check_circuit_button->h() + 5,
+  clear_errors_button = new Fl_Button(check_circuit_button->x()
+                                        + check_circuit_button->w() + 5,
+                                      check_circuit_button->y(),
                                       check_circuit_button->w(),
                                       20, "Clear errors");
   clear_errors_button->box(FL_BORDER_BOX);
@@ -918,10 +933,10 @@ editor::window::window()
   clear_errors_button->callback(control_cb, (void*)"clear errors");
   side_screen.add(clear_errors_button);
 
-  edit_button = new Fl_Button(clear_errors_button->x(),
-                              clear_errors_button->y()
-                                + clear_errors_button->h() + 10,
-                              (clear_errors_button->w() - 5) / 2,
+  edit_button = new Fl_Button(check_circuit_button->x(),
+                              check_circuit_button->y()
+                                + check_circuit_button->h() + 15,
+                              check_circuit_button->w(),
                               20, "Edit [E]");
   edit_button->box(FL_BORDER_BOX);
   edit_button->labelsize(12);
@@ -1099,6 +1114,44 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 
   else if (cmd == "help")
   { fl_message("Linky\nv0\nsimple digital circuit simulator"); }
+
+  else if (cmd == "simulate")
+  { bus(IM("check circuit errors"));
+
+    bool fail = false;
+    if (context.ls(ROOT/"network errors").size() ||
+        context.ls(ROOT/"sequence errors").size()) { fail = true; }
+    if (fail) { return; }
+
+    bus(IM("generate code"));
+    bus(IM("screen update"));
+
+    // preparing simulation parameters
+    simulator::params sp;
+    std::string tmp = context[ROOT/"circuit file path"];
+    std::string circuit_name;
+    for (char c : tmp) { if (c == '.') { break; } circuit_name.push_back(c); }
+    sp.circuit_name = circuit_name;
+
+    std::string gen_name = circuit_name;
+    gen_name.append(".c");
+    sp.source_files.push_back(gen_name);
+    
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { if (circuit[ROOT/"units"/unit/"type"] == "code block")
+      { sp.source_files.push_back((std::string)
+                                  circuit[ROOT/"units"/unit/"source file"]); } }
+
+    for (std::string input : circuit.ls(ROOT/"inputs"))
+    { sp.inputs.push_back((std::string)
+                          circuit[ROOT/"inputs"/input/"name"]); }
+    
+    for (std::string output : circuit.ls(ROOT/"outputs"))
+    { sp.outputs.push_back((std::string)
+                           circuit[ROOT/"outputs"/output/"name"]); }
+    
+    simulator::window sim(sp);
+    while (sim.shown()) { Fl::wait(); } }
 
   else { bus(IM(cmd)); } }
 

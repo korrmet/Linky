@@ -194,7 +194,7 @@ simulator::window::window(struct simulator::params sim_params)
   run_btn(575, 455, 60, 20, "Run"),
   sim_params(sim_params),
   x_max(0), x_min(0), y_max(0), y_min(0), endpoint(0), Ts(0)
-{ size_range(640, 480); params.buffer(&buf);
+{ size_range(640, 480); params.buffer(&buf); set_modal(); show();
   run_btn.callback(run_btn_cb, this); }
 // <---
 
@@ -268,8 +268,7 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
   { print(compile_code, "%s ", sfile.c_str()); }
   print(compile_code, "-o sim.so -fPIC -shared",
         that->sim_params.circuit_name.c_str());
-  // TODO: check the result and handle
-  PRINT("system = %d\n", std::system(compile_code.c_str()));
+  if (std::system(compile_code.c_str()) != 0) { return; }
   // <---
 
   // ---> loading compiled library
@@ -277,9 +276,6 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
   void (*sim_func)(float* inputs, float* ouputs, float* context)
     = (void (*)(float*, float*, float*))
       dlsym(sim_handle, that->sim_params.circuit_name.c_str());
-  // TODO: check the pointers and handle
-  PRINT("sim_handle = %p\n", sim_handle);
-  PRINT("sim_func = %p\n", sim_func);
   // <---
 
   // ---> run the simulation using signals values
