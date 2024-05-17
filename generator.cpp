@@ -147,12 +147,14 @@ class circuit_calculator
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
-  { std::string header; std::string source;
+  { context.del(ROOT/"simulation params");
+    std::string header; std::string source;
     std::string tmp = context[ROOT/"circuit file path"];
     std::string fname;
     for (char c : tmp) { if (c == '.') { break; } fname.push_back(c); }
     std::string header_name = fname; header_name.append(".h");
     std::string source_name = fname; source_name.append(".c");
+    context[ROOT/"simulation params"/"name"] = fname;
 
     // ---> header
     print(header, "#ifndef %s_h\n", fname.c_str());
@@ -167,6 +169,7 @@ void generator::handler(void* ctx, IM mess)
             counter);
       counter++; }
     print(header, "#define %s_inputs_size %d\n", fname.c_str(), counter);
+    context[ROOT/"simulation params"/"inputs size"] = (int)counter;
 
     counter = 0;
     print(header, "\n// outputs\n");
@@ -177,6 +180,7 @@ void generator::handler(void* ctx, IM mess)
             counter);
       counter++; }
     print(header, "#define %s_outputs_size %d\n", fname.c_str(), counter);
+    context[ROOT/"simulation params"/"outputs size"] = (int)counter;
 
     print(header, "\n// context\n");
     unsigned int context_size = 0;
@@ -218,7 +222,13 @@ void generator::handler(void* ctx, IM mess)
                                 "float* context);\n",
               function_name.c_str()); } }
 
+    for (std::string net : context.ls(ROOT/"network"))
+    { print(header, "#define %s_net_%s %d\n",
+            fname.c_str(), net.c_str(), context_size);
+      context_size++; }
+
     print(header, "#define %s_context_size %d\n", fname.c_str(), context_size);
+    context[ROOT/"simulation params"/"context size"] = (int)context_size;
 
     print(header, "\nvoid %s(float* inputs,"
                   " float* outputs, float* context);\n", fname.c_str());
@@ -242,9 +252,6 @@ void generator::handler(void* ctx, IM mess)
 
     print(source, "\nvoid %s(float* inputs, "
                   " float* outputs, float* context) {\n", fname.c_str());
-    
-    for (std::string net : context.ls(ROOT/"network"))
-    { print(source, "  float net_%s = 0.0f;\n", net.c_str()); }
 
     for (std::string step : context.ls(ROOT/"sequence"))
     { std::string type = context[ROOT/"sequence"/step/"type"];
@@ -263,16 +270,16 @@ void generator::handler(void* ctx, IM mess)
       if (type == "input")
       { std::string nid = circuit[ROOT/"inputs"/id/"net"];
         std::string iname = circuit[ROOT/"inputs"/id/"name"];
-        print(source, "  net_%s = inputs[%s_%s];\n",
-              nid.c_str(), fname.c_str(), iname.c_str()); }
+        print(source, "  context[%s_net_%s] = inputs[%s_%s];\n",
+              fname.c_str(), nid.c_str(), fname.c_str(), iname.c_str()); }
       // <---
 
       // ---> output
       else if (type == "output")
       { std::string nid = circuit[ROOT/"outputs"/id/"net"];
         std::string oname = circuit[ROOT/"outputs"/id/"name"];
-        print(source, "  outputs[%s_%s] = net_%s;\n",
-              fname.c_str(), oname.c_str(), nid.c_str()); }
+        print(source, "  outputs[%s_%s] = context[%s_net_%s];\n",
+              fname.c_str(), oname.c_str(), fname.c_str(), nid.c_str()); }
       // <---
       
       else if (type == "unit")
@@ -280,7 +287,8 @@ void generator::handler(void* ctx, IM mess)
         if (unit_type == "constant")
         { std::string nid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           float value = circuit[ROOT/"units"/id/"value"];
-          print(source, "  net_%s = %f;\n", nid.c_str(), value); }
+          print(source, "  context[%s_net_%s] = %f;\n",
+                fname.c_str(), nid.c_str(), value); }
         // <---
         
         // ---> sum
@@ -288,8 +296,12 @@ void generator::handler(void* ctx, IM mess)
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          print(source, "  net_%s = net_%s + net_%s;\n",
-                onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+          print(source,
+                "  context[%s_net_%s] ="
+                " context[%s_net_%s] + context[%s_net_%s];\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), i0nid.c_str(),
+                fname.c_str(), i1nid.c_str()); }
         // <---
 
         // ---> product
@@ -297,8 +309,12 @@ void generator::handler(void* ctx, IM mess)
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          print(source, "  net_%s = net_%s * net_%s;\n",
-                onid.c_str(), i0nid.c_str(), i1nid.c_str()); }
+          print(source,
+                "  context[%s_net_%s] ="
+                " context[%s_net_%s] * context[%s_net_%s];\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), i0nid.c_str(),
+                fname.c_str(), i1nid.c_str()); }
         // <---
 
         // ---> delay
@@ -308,8 +324,10 @@ void generator::handler(void* ctx, IM mess)
           int value = circuit[ROOT/"units"/id/"value"];
 
           // set output network
-          print(source, "  net_%s = context[%s_unit_%s + %d];\n",
-                onid.c_str(), fname.c_str(), id.c_str(), value - 1);
+          print(source, "  context[%s_net_%s] = context[%s_unit_%s + %d];\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), id.c_str(),
+                value - 1);
 
           // manage input
           for (unsigned int i = value - 1; i > 0; i--)
@@ -317,8 +335,8 @@ void generator::handler(void* ctx, IM mess)
                           "= context[%s_unit_%s + %d];\n",
                   fname.c_str(), id.c_str(), i,
                   fname.c_str(), id.c_str(), i - 1); }
-          print(source, "  context[%s_unit_%s] = net_%s;\n",
-                fname.c_str(), id.c_str(), inid.c_str()); }
+          print(source, "  context[%s_unit_%s] = context[%s_net_%s];\n",
+                fname.c_str(), id.c_str(), fname.c_str(), inid.c_str()); }
         // <---
 
         // ---> function
@@ -355,8 +373,9 @@ void generator::handler(void* ctx, IM mess)
                           "= context[%s_unit_%s + %d];\n",
                   fname.c_str(), id.c_str(), i,
                   fname.c_str(), id.c_str(), i + 1); }
-          print(source, "  context[%s_unit_%s + %d] = net_%s;\n",
-                fname.c_str(), id.c_str(), num_count - 1, inid.c_str());
+          print(source, "  context[%s_unit_%s + %d] = context[%s_net_%s];\n",
+                fname.c_str(), id.c_str(), num_count - 1,
+                fname.c_str(), inid.c_str());
 
           // manage denominator delays
           for (int i = 0; i < den_count - 1; i++)
@@ -391,8 +410,8 @@ void generator::handler(void* ctx, IM mess)
                 den_coeffs[0]);
 
           // setting output
-          print(source, "  net_%s = context[%s_unit_%s + %d];\n",
-                onid.c_str(), fname.c_str(), id.c_str(),
+          print(source, "  context[%s_net_%s] = context[%s_unit_%s + %d];\n",
+                fname.c_str(), onid.c_str(), fname.c_str(), id.c_str(),
                 num_count + den_count - 1);
         }
         // <---
@@ -406,8 +425,9 @@ void generator::handler(void* ctx, IM mess)
           unsigned int counter = 0;
           for (std::string input : circuit.ls(ROOT/"units"/id/"inputs"))
           { std::string inid = circuit[ROOT/"units"/id/"inputs"/input/"net"];
-            print(source, "  context[%s_unit_%s + %d] = net_%s;\n",
-                  fname.c_str(), id.c_str(), counter, inid.c_str());
+            print(source, "  context[%s_unit_%s + %d] = context[%s_net_%s];\n",
+                  fname.c_str(), id.c_str(), counter,
+                  fname.c_str(), inid.c_str());
             counter++; }
           std::string function_name = circuit[ROOT/"units"/id/"function name"];
           print(source, "  %s(&context[%s_unit_%s + %d], "
@@ -420,8 +440,8 @@ void generator::handler(void* ctx, IM mess)
           counter = 0;
           for (std::string output : circuit.ls(ROOT/"units"/id/"outputs"))
           { std::string onid = circuit[ROOT/"units"/id/"outputs"/output/"net"];
-            print(source, "  net_%s = context[%s_unit_%s + %d];\n",
-                  onid.c_str(), fname.c_str(), id.c_str(),
+            print(source, "  context[%s_net_%s] = context[%s_unit_%s + %d];\n",
+                  fname.c_str(), onid.c_str(), fname.c_str(), id.c_str(),
                   inputs_size + counter);
             counter++; } }
         // <---

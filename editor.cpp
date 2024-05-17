@@ -1128,12 +1128,10 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 
     // preparing simulation parameters
     simulator::params sp;
-    std::string tmp = context[ROOT/"circuit file path"];
-    std::string circuit_name;
-    for (char c : tmp) { if (c == '.') { break; } circuit_name.push_back(c); }
-    sp.circuit_name = circuit_name;
+    if (!context(ROOT/"simulation params")) { return; }
+    sp.circuit_name = (std::string)context[ROOT/"simulation params"/"name"];
 
-    std::string gen_name = circuit_name;
+    std::string gen_name = sp.circuit_name;
     gen_name.append(".c");
     sp.source_files.push_back(gen_name);
     
@@ -1150,6 +1148,7 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
     { sp.outputs.push_back((std::string)
                            circuit[ROOT/"outputs"/output/"name"]); }
     
+    sp.context_size = (int)context[ROOT/"simulation params"/"context size"];
     simulator::window sim(sp);
     while (sim.shown()) { Fl::wait(); } }
 
