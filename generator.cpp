@@ -187,6 +187,7 @@ void generator::handler(void* ctx, IM mess)
     
     for (std::string unit : circuit.ls(ROOT/"units"))
     { std::string utype = circuit[ROOT/"units"/unit/"type"];
+      // ---> delay
       if (utype == "delay")
       { print(header, "#define %s_unit_%s %d\n",
               fname.c_str(), unit.c_str(), context_size);
@@ -194,6 +195,9 @@ void generator::handler(void* ctx, IM mess)
         print(header, "#define %s_unit_%s_SIZE %d\n",
               fname.c_str(), unit.c_str(), value);
         context_size += value; }
+      // <---
+      
+      // ---> function
       else if (utype == "function")
       { std::string num_poly = circuit[ROOT/"units"/unit/"numerator poly"];
         std::string den_poly = circuit[ROOT/"units"/unit/"denominator poly"];
@@ -205,6 +209,9 @@ void generator::handler(void* ctx, IM mess)
               fname.c_str(), unit.c_str(), context_size);
         context_size += num_count;
         context_size += den_count; }
+      // <---
+
+      // ---> code block
       else if (utype == "code block")
       { unsigned int block_context_size
           = (int)circuit[ROOT/"units"/unit/"context size"];
@@ -220,7 +227,20 @@ void generator::handler(void* ctx, IM mess)
         print(header, "extern void %s(float* inputs, "
                                 "float* outputs, "
                                 "float* context);\n",
-              function_name.c_str()); } }
+              function_name.c_str()); }
+      // <---
+      
+      // ---> loopback
+      else if (utype == "loopback")
+      { int value = circuit[ROOT/"units"/unit/"value"];
+        if (value > 1)
+        { print(header, "#define %s_unit_%s %d\n",
+                fname.c_str(), unit.c_str(), context_size);
+          print(header, "#define %s_unit_%s_SIZE %d\n",
+                fname.c_str(), unit.c_str(), value - 1);
+          context_size += value - 1; } }
+      // <---
+    }
 
     for (std::string net : context.ls(ROOT/"network"))
     { print(header, "#define %s_net_%s %d\n",
@@ -303,6 +323,19 @@ void generator::handler(void* ctx, IM mess)
                 fname.c_str(), i0nid.c_str(),
                 fname.c_str(), i1nid.c_str()); }
         // <---
+        
+        // ---> difference
+        else if (unit_type == "difference")
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
+          print(source,
+                "  context[%s_net_%s] ="
+                " context[%s_net_%s] - context[%s_net_%s];\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), i0nid.c_str(),
+                fname.c_str(), i1nid.c_str()); }
+        // <---
 
         // ---> product
         else if (unit_type == "product")
@@ -312,6 +345,19 @@ void generator::handler(void* ctx, IM mess)
           print(source,
                 "  context[%s_net_%s] ="
                 " context[%s_net_%s] * context[%s_net_%s];\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), i0nid.c_str(),
+                fname.c_str(), i1nid.c_str()); }
+        // <---
+        
+        // ---> division
+        else if (unit_type == "division")
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
+          print(source,
+                "  context[%s_net_%s] ="
+                " context[%s_net_%s] / context[%s_net_%s];\n",
                 fname.c_str(), onid.c_str(),
                 fname.c_str(), i0nid.c_str(),
                 fname.c_str(), i1nid.c_str()); }
@@ -343,8 +389,6 @@ void generator::handler(void* ctx, IM mess)
         //      sum[i = 0..n](k_xi * x[n - i]) - sum[j = 1..m](k_yj * y[m - j])
         //  y = ---------------------------------------------------------------
         //      k_y0
-        //  WARNING: this code is definitely needs to be debugged!
-        //           it's written just for the overview
         else if (unit_type == "function")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
@@ -445,8 +489,33 @@ void generator::handler(void* ctx, IM mess)
                   inputs_size + counter);
             counter++; } }
         // <---
-      }
-    }
+        
+        // ---> loopback
+        else if (unit_type == "loopback")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int value = circuit[ROOT/"units"/id/"value"];
+          if (value == 1) // simple case with z-1 delay
+          { print(source, "  context[%s_net_%s] = context[%s_net_%s];\n",
+                  fname.c_str(), onid.c_str(),
+                  fname.c_str(), inid.c_str()); }
+          else
+          { // set output network
+            print(source, "  context[%s_net_%s] = context[%s_unit_%s + %d];\n",
+                  fname.c_str(), onid.c_str(),
+                  fname.c_str(), id.c_str(),
+                  value - 2);
+           
+            // manage input
+            for (unsigned int i = value - 2; i > 0; i--)
+            { print(source, "  context[%s_unit_%s + %d] "
+                            "= context[%s_unit_%s + %d];\n",
+                    fname.c_str(), id.c_str(), i,
+                    fname.c_str(), id.c_str(), i - 1); }
+            print(source, "  context[%s_unit_%s] = context[%s_net_%s];\n",
+                  fname.c_str(), id.c_str(), fname.c_str(), inid.c_str()); } }
+        // <---
+      } }
     print(source, "}\n");
 
     std::ofstream source_file(source_name);
@@ -671,11 +740,7 @@ void generator::handler(void* ctx, IM mess)
       for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
       { bool active = false;
         if (circuit[ROOT/"units"/unit/"type"] == "constant") { active = true; }
-        if (circuit[ROOT/"units"/unit/"type"] == "delay")    { active = true; }
-        if (circuit[ROOT/"units"/unit/"type"] == "function" &&
-            !!circuit(ROOT/"units"/unit/"numerator poly"/0) &&
-            circuit[ROOT/"units"/unit/"numerator poly"/0] == 0)
-                                                             { active = true; }
+        if (circuit[ROOT/"units"/unit/"type"] == "loopback") { active = true; }
         c.o((std::string)circuit[ROOT/"units"/unit/"outputs"/output],
             active); } }
 

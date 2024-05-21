@@ -228,21 +228,50 @@ class codeEditWindow : public Fl_Window
   std::string    unit_name; };
 // <---
 
-static editor::window* single_window = nullptr;
-static Fl_Button* simulate_button = nullptr;
-static Fl_Button* generate_button = nullptr;
+// ---> edit loopback window
+class loopbackEditWindow : public Fl_Window
+{ public:
+  loopbackEditWindow(std::string name)
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Value of the loopback delay"),
+    value_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save"),
+    unit_name(name)
+  { save_btn.callback(save_cb, (void*)this);
+    value_input.step(1);
+    value_input.value((int)circuit[ROOT/"units"/name/"value"]);
+    set_modal(); show(); }
+
+  static void save_cb(Fl_Widget* w, void* arg)
+  { loopbackEditWindow* that = (loopbackEditWindow*)arg;
+    circuit[ROOT/"units"/that->unit_name/"value"]
+      = (int)that->value_input.value();
+    bus(IM("screen update")); that->hide(); }
+
+  Fl_Value_Input value_input;
+  Fl_Box         label;
+  Fl_Button      save_btn;
+  std::string    unit_name; };
+// <---
+
+static editor::window* single_window   = nullptr;
+static Fl_Button* simulate_button      = nullptr;
+static Fl_Button* generate_button      = nullptr;
 static Fl_Button* check_circuit_button = nullptr;
-static Fl_Button* clear_errors_button = nullptr;
-static Fl_Button* edit_button = nullptr;
-static Fl_Button* wire_button = nullptr;
-static Fl_Button* input_button = nullptr;
-static Fl_Button* output_button = nullptr;
-static Fl_Button* const_button = nullptr;
-static Fl_Button* delay_button = nullptr;
-static Fl_Button* sum_button = nullptr;
-static Fl_Button* prod_button = nullptr;
-static Fl_Button* function_button = nullptr;
-static Fl_Button* code_button = nullptr;
+static Fl_Button* clear_errors_button  = nullptr;
+static Fl_Button* edit_button          = nullptr;
+static Fl_Button* wire_button          = nullptr;
+static Fl_Button* input_button         = nullptr;
+static Fl_Button* output_button        = nullptr;
+static Fl_Button* const_button         = nullptr;
+static Fl_Button* delay_button         = nullptr;
+static Fl_Button* sum_button           = nullptr;
+static Fl_Button* diff_button          = nullptr;
+static Fl_Button* prod_button          = nullptr;
+static Fl_Button* div_button           = nullptr;
+static Fl_Button* function_button      = nullptr;
+static Fl_Button* code_button          = nullptr;
+static Fl_Button* loopback_button      = nullptr;
 
 editor::workspace::workspace(int x, int y, int w, int h)
 : Fl_Widget(x, y, w, h)
@@ -278,10 +307,15 @@ int editor::workspace::handle(int event)
     else if (Fl::event_key() == 'o') { bus(IM("add output")); }
     else if (Fl::event_key() == 'c') { bus(IM("add const")); }
     else if (Fl::event_key() == 'z') { bus(IM("add delay")); }
-    else if (Fl::event_key() == 's') { bus(IM("add sum")); }
-    else if (Fl::event_key() == 'p') { bus(IM("add prod")); }
+    else if (Fl::event_key() == 's')
+    { if (context[ROOT/"shift"] == 1) { bus(IM("add diff")); }
+      if (context[ROOT/"shift"] == 0) { bus(IM("add sum"));  } }
+    else if (Fl::event_key() == 'p')
+    { if (context[ROOT/"shift"] == 1) { bus(IM("add div")); }
+      if (context[ROOT/"shift"] == 0) { bus(IM("add prod")); } }
     else if (Fl::event_key() == 'f') { bus(IM("add function")); }
     else if (Fl::event_key() == 'b') { bus(IM("add code block")); }
+    else if (Fl::event_key() == 'l') { bus(IM("add loopback")); }
     else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
     else if (Fl::event_key() == FL_Delete) { bus(IM("delete")); }
     else if (Fl::event_key() == FL_BackSpace) { bus(IM("delete")); }
@@ -299,7 +333,7 @@ int editor::workspace::handle(int event)
 
 
   if (event == FL_KEYUP)
-  { if (Fl::event_key() == ' ') { bus(IM("space up")); }
+  { if      (Fl::event_key() == ' ') { bus(IM("space up")); }
     else if (Fl::event_key() == FL_Control_L) { bus(IM("control up")); }
     else if (Fl::event_key() == FL_Shift_L) { bus(IM("shift up")); }
     return 1; }
@@ -447,7 +481,9 @@ void editor::workspace::draw()
 
   // ---> units
   for (std::string unit : circuit.ls(ROOT/"units"))
-  { if      (circuit[ROOT/"units"/unit/"type"] == "constant")
+  { 
+    // ---> constant
+    if      (circuit[ROOT/"units"/unit/"type"] == "constant")
     { fl_color(BLACK);
       float val = circuit[ROOT/"units"/unit/"value"];
       fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
@@ -473,7 +509,9 @@ void editor::workspace::draw()
               x() + x_screen(_x[0]), y() + y_screen(_y[0]),
               pixel_w, 2 * (int)context[ROOT/"grid size"],
               FL_ALIGN_LEFT); }
+    // <---
     
+    // ---> delay
     else if (circuit[ROOT/"units"/unit/"type"] == "delay")
     { fl_color(BLACK);
       int val = circuit[ROOT/"units"/unit/"value"];
@@ -482,29 +520,33 @@ void editor::workspace::draw()
       int pixel_w = fl_width(label.c_str());
       int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
       
-      int _x[5] = { 0 }; int _y[5] = { 0 };
+      int _x[7] = { 0 }; int _y[7] = { 0 };
       _x[0] = circuit[ROOT/"units"/unit/"x"];
       _y[0] = circuit[ROOT/"units"/unit/"y"];
       _x[1] = _x[0] + label_w + 2; _y[1] = _y[0];
-      _x[2] = _x[0] + label_w;     _y[2] = _y[0] + 2;
-      _x[3] = _x[0] - 2;           _y[3] = _y[0] + 2;
-      _x[4] = _x[0];               _y[4] = _y[0];
+      _x[2] = _x[0] + label_w + 3; _y[2] = _y[0] + 1;
+      _x[3] = _x[0] + label_w + 2; _y[3] = _y[0] + 2;
+      _x[4] = _x[0];               _y[4] = _y[0] + 2;
+      _x[5] = _x[0] + 1;           _y[5] = _y[0] + 1;
+      _x[6] = _x[0];               _y[6] = _y[0];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x[0] - 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x[0] + 1;
       circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y[0] + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w + 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w + 3;
       circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
 
-      for (unsigned int i = 0; i < 4; i++)
+      for (unsigned int i = 0; i < 6; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
                 x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
 
       fl_draw(label.c_str(),
-              x() + x_screen(_x[0]), y() + y_screen(_y[0]),
+              x() + x_screen(_x[0] + 2), y() + y_screen(_y[0]),
               pixel_w, 2 * (int)context[ROOT/"grid size"],
               FL_ALIGN_LEFT); }
+    // <---
     
+    // ---> sum
     else if (circuit[ROOT/"units"/unit/"type"] == "sum")
     { fl_color(BLACK);
       int _x = circuit[ROOT/"units"/unit/"x"];
@@ -530,7 +572,33 @@ void editor::workspace::draw()
               y() + y_screen(_y + 1),
               x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
               y() + y_screen(_y + 1)); }
+    // <---
     
+    // ---> difference
+    else if (circuit[ROOT/"units"/unit/"type"] == "difference")
+    { fl_color(BLACK);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"]);
+      fl_line(x() + x_screen(_x    ) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 1),
+              x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 1)); }
+    // <---
+    
+    // ---> product
     else if (circuit[ROOT/"units"/unit/"type"] == "product")
     { fl_color(BLACK);
       int _x = circuit[ROOT/"units"/unit/"x"];
@@ -556,7 +624,33 @@ void editor::workspace::draw()
               y() + y_screen(_y + 0) + (int)context[ROOT/"grid size"] / 2,
               x() + x_screen(_x + 0) + (int)context[ROOT/"grid size"] / 2,
               y() + y_screen(_y + 1) + (int)context[ROOT/"grid size"] / 2); }
+    // <---
     
+    // ---> division
+    else if (circuit[ROOT/"units"/unit/"type"] == "division")
+    { fl_color(BLACK);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+      
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"]);
+      fl_line(x() + x_screen(_x + 1) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 0) + (int)context[ROOT/"grid size"] / 2,
+              x() + x_screen(_x + 0) + (int)context[ROOT/"grid size"] / 2,
+              y() + y_screen(_y + 1) + (int)context[ROOT/"grid size"] / 2); }
+    // <---
+    
+    // ---> function
     else if (circuit[ROOT/"units"/unit/"type"] == "function")
     { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
       int _x0 = circuit[ROOT/"units"/unit/"x"];
@@ -587,7 +681,9 @@ void editor::workspace::draw()
              x() + x_screen(_x0), y() + y_screen(_y0),
              pixel_w, 2 * (int)context[ROOT/"grid size"],
              FL_ALIGN_LEFT); }
+    // <---
     
+    // ---> code block
     else if (circuit[ROOT/"units"/unit/"type"] == "code block")
     { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
       int _x0 = circuit[ROOT/"units"/unit/"x"];
@@ -657,8 +753,45 @@ void editor::workspace::draw()
         circuit[ROOT/"units"/unit/"outputs"/ocount/"x"] = _x0 + label_w;
         circuit[ROOT/"units"/unit/"outputs"/ocount/"y"]
           = _y0 + 2 + 2 * (int)ilist.size() + 2 * ocount + 1;
-        ocount++; }
-    } }
+        ocount++; } }
+    // <---
+  
+    // ---> loopback
+    else if (circuit[ROOT/"units"/unit/"type"] == "loopback")
+    { fl_color(BLACK);
+      int val = circuit[ROOT/"units"/unit/"value"];
+      std::string label = std::string("z-").append(std::to_string(val));
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int pixel_w = fl_width(label.c_str());
+      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
+
+      int _x[7] = { 0 }; int _y[7] = { 0 };
+      _x[0] = circuit[ROOT/"units"/unit/"x"];
+      _y[0] = circuit[ROOT/"units"/unit/"y"];
+      _x[1] = _x[0] + label_w + 2; _y[1] = _y[0];
+      _x[2] = _x[0] + label_w + 1; _y[2] = _y[0] + 1;
+      _x[3] = _x[0] + label_w + 2; _y[3] = _y[0] + 2;
+      _x[4] = _x[0];               _y[4] = _y[0] + 2;
+      _x[5] = _x[0] - 1;           _y[5] = _y[0] + 1;
+      _x[6] = _x[0];               _y[6] = _y[0]; 
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x[0] + label_w + 1;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y[0] + 1;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] - 1;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
+
+      for (unsigned int i = 0; i < 6; i++)
+      { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
+                x() + x_screen(_x[i + 1]), y() + y_screen(_y[i + 1])); }
+
+      fl_draw(label.c_str(),
+              x() + x_screen(_x[0] + 1), y() + y_screen(_y[0]),
+              pixel_w, 2 * (int)context[ROOT/"grid size"],
+              FL_ALIGN_LEFT); }
+    // <---
+  
+  }
   // <---
 
   // ---> wires 
@@ -1017,10 +1150,22 @@ editor::window::window()
   sum_button->color2(Fl_Color(BLUE));
   sum_button->callback(control_cb, (void*)"add sum");
   side_screen.add(sum_button);
-
-  prod_button = new Fl_Button(delay_button->x(),
+  
+  diff_button = new Fl_Button(delay_button->x(),
                               delay_button->y() + delay_button->h() + 5,
                               delay_button->w(),
+                              20, "Diff [^S]");
+  diff_button->box(FL_BORDER_BOX);
+  diff_button->labelsize(12);
+  diff_button->clear_visible_focus();
+  diff_button->color(Fl_Color(WHITE));
+  diff_button->color2(Fl_Color(BLUE));
+  diff_button->callback(control_cb, (void*)"add diff");
+  side_screen.add(diff_button);
+
+  prod_button = new Fl_Button(sum_button->x(),
+                              sum_button->y() + sum_button->h() + 5,
+                              sum_button->w(),
                               20, "Prod [P]");
   prod_button->box(FL_BORDER_BOX);
   prod_button->labelsize(12);
@@ -1030,9 +1175,21 @@ editor::window::window()
   prod_button->callback(control_cb, (void*)"add prod");
   side_screen.add(prod_button);
 
-  function_button = new Fl_Button(sum_button->x(),
-                                  sum_button->y() + sum_button->h() + 5,
-                                  sum_button->w(),
+  div_button = new Fl_Button(diff_button->x(),
+                             diff_button->y() + diff_button->h() + 5,
+                             diff_button->w(),
+                             20, "Div [^P]");
+  div_button->box(FL_BORDER_BOX);
+  div_button->labelsize(12);
+  div_button->clear_visible_focus();
+  div_button->color(Fl_Color(WHITE));
+  div_button->color2(Fl_Color(BLUE));
+  div_button->callback(control_cb, (void*)"add div");
+  side_screen.add(div_button);
+
+  function_button = new Fl_Button(prod_button->x(),
+                                  prod_button->y() + prod_button->h() + 5,
+                                  prod_button->w(),
                                   20, "Function [F]");
   function_button->box(FL_BORDER_BOX);
   function_button->labelsize(12);
@@ -1042,9 +1199,9 @@ editor::window::window()
   function_button->callback(control_cb, (void*)"add function");
   side_screen.add(function_button);
 
-  code_button = new Fl_Button(prod_button->x(),
-                              prod_button->y() + prod_button->h() + 5,
-                              prod_button->w(),
+  code_button = new Fl_Button(div_button->x(),
+                              div_button->y() + div_button->h() + 5,
+                              div_button->w(),
                               20, "Code Block [B]");
   code_button->box(FL_BORDER_BOX);
   code_button->labelsize(12);
@@ -1053,6 +1210,19 @@ editor::window::window()
   code_button->color2(Fl_Color(BLUE));
   code_button->callback(control_cb, (void*)"add code block");
   side_screen.add(code_button);
+
+  loopback_button = new Fl_Button(function_button->x(),
+                                  function_button->y()
+                                    + function_button->h() + 5,
+                                  function_button->w(),
+                                  20, "Loopback [L]");
+  loopback_button->box(FL_BORDER_BOX);
+  loopback_button->labelsize(12);
+  loopback_button->clear_visible_focus();
+  loopback_button->color(Fl_Color(WHITE));
+  loopback_button->color2(Fl_Color(BLUE));
+  loopback_button->callback(control_cb, (void*)"add loopback");
+  side_screen.add(loopback_button);
 
   // dummy group to correct resizing
   Fl_Group* dummy = new Fl_Group(side_screen.x(),
@@ -1068,6 +1238,9 @@ editor::window::window()
   context[ROOT/"cursor pos"/"x"] = 0;
   context[ROOT/"cursor pos"/"y"] = 0;
   context[ROOT/"grid size"] = 10;
+  context[ROOT/"shift"] = 0;
+  context[ROOT/"space"] = 0;
+  context[ROOT/"control"] = 0;
 
   show(); }
 
@@ -1194,10 +1367,22 @@ void editor::window::handler(void* ctx, IM mess)
     context[ROOT/"edit mode"] = "place sum";
     that->redraw(); }
 
+  else if (mess == "add diff")
+  { bus(IM("end input"));
+    diff_button->color(GREEN); diff_button->redraw();
+    context[ROOT/"edit mode"] = "place diff";
+    that->redraw(); }
+
   else if (mess == "add prod")
   { bus(IM("end input"));
     prod_button->color(GREEN); prod_button->redraw();
     context[ROOT/"edit mode"] = "place prod";
+    that->redraw(); }
+
+  else if (mess == "add div")
+  { bus(IM("end input"));
+    div_button->color(GREEN); div_button->redraw();
+    context[ROOT/"edit mode"] = "place div";
     that->redraw(); }
 
   else if (mess == "add function")
@@ -1210,6 +1395,12 @@ void editor::window::handler(void* ctx, IM mess)
   { bus(IM("end input"));
     code_button->color(GREEN); code_button->redraw();
     context[ROOT/"edit mode"] = "place code block";
+    that->redraw(); }
+
+  else if (mess == "add loopback")
+  { bus(IM("end input"));
+    loopback_button->color(GREEN); loopback_button->redraw();
+    context[ROOT/"edit mode"] = "place loopback";
     that->redraw(); }
 
   else if (mess == "edit items")
@@ -1226,9 +1417,12 @@ void editor::window::handler(void* ctx, IM mess)
     const_button->color(WHITE); const_button->redraw();
     delay_button->color(WHITE); delay_button->redraw();
     sum_button->color(WHITE); sum_button->redraw();
+    diff_button->color(WHITE); diff_button->redraw();
     prod_button->color(WHITE); prod_button->redraw();
+    div_button->color(WHITE); div_button->redraw();
     function_button->color(WHITE); function_button->redraw();
     code_button->color(WHITE); code_button->redraw();
+    loopback_button->color(WHITE); loopback_button->redraw();
 
     // finalize previous operations if needed
     if (context[ROOT/"edit mode"] == "place wire")
@@ -1287,6 +1481,9 @@ void editor::window::handler(void* ctx, IM mess)
 
       else if (circuit[ROOT/"units"/unit/"type"] == "code block")
       { codeEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
+
+      else if (circuit[ROOT/"units"/unit/"type"] == "loopback")
+      { loopbackEditWindow w(unit); while(w.shown()) { Fl::wait(); } }
       
       } }
 
@@ -1313,12 +1510,18 @@ void editor::window::handler(void* ctx, IM mess)
     { bus(IM("place delay press")); }
     else if (context[ROOT/"edit mode"] == "place sum")
     { bus(IM("place sum press")); }
+    else if (context[ROOT/"edit mode"] == "place diff")
+    { bus(IM("place diff press")); }
     else if (context[ROOT/"edit mode"] == "place prod")
     { bus(IM("place prod press")); }
+    else if (context[ROOT/"edit mode"] == "place div")
+    { bus(IM("place div press")); }
     else if (context[ROOT/"edit mode"] == "place function")
     { bus(IM("place function press")); }
     else if (context[ROOT/"edit mode"] == "place code block")
     { bus(IM("place code block press")); }
+    else if (context[ROOT/"edit mode"] == "place loopback")
+    { bus(IM("place loopback press")); }
     else if (context[ROOT/"edit mode"] == "edit properties")
     { bus(IM("edit")); }
     
@@ -1547,6 +1750,15 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
     circuit[ROOT/"units"/idx/"type"] = "sum";
     that->redraw(); }
+
+  else if (mess == "place diff press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "difference";
+    that->redraw(); }
   
   else if (mess == "place prod press")
   { circuit[ROOT/"units"];
@@ -1555,6 +1767,15 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
     circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
     circuit[ROOT/"units"/idx/"type"] = "product";
+    that->redraw(); }
+
+  else if (mess == "place div press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "division";
     that->redraw(); }
     
   else if (mess == "place function press")
@@ -1580,5 +1801,16 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[ROOT/"units"/idx/"function name"] = "";
     circuit[ROOT/"units"/idx/"inputs names"] = "";
     circuit[ROOT/"units"/idx/"outputs names"] = "";
-    circuit[ROOT/"units"/idx/"context size"] = 0; }
+    circuit[ROOT/"units"/idx/"context size"] = 0;
+    that->redraw(); }
+
+  else if (mess == "place loopback press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "loopback";
+    circuit[ROOT/"units"/idx/"value"] = 1;
+    that->redraw(); }
 }  
