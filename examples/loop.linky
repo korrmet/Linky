@@ -38,11 +38,11 @@
             (y)<int>[9]
             (type)<string>[function]
             (function name)<string>[loopback]
-            (numerator poly)<string>[0;1;] {
-                (0)<float>[0.000000]
-                (1)<float>[1.000000]
+            (numerator poly)<string>[1;] {
+                (0)<float>[1.000000]
             }
-            (denominator poly)<string>[1;] {
+            (denominator poly)<string>[1;1;] {
+                (1)<float>[1.000000]
                 (2)<float>[1.000000]
             }
             (inputs) {
@@ -63,7 +63,7 @@
         (3)<string>[12] {
             (x)<int>[10]
             (y)<int>[1]
-            (type)<string>[sum]
+            (type)<string>[difference]
             (inputs) {
                 (0)<string>[13] {
                     (x)<int>[10]

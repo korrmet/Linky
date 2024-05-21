@@ -143,7 +143,8 @@ void simulator::chart::draw()
 
   fl_line_style(FL_SOLID, 1);
   for (line l : lines)
-  { fl_color(Fl_Color(l.color));
+  { if (l.points.size() == 0) { continue; } // empty line, skip it
+    fl_color(Fl_Color(l.color));
     for (unsigned int i = 0; i < l.points.size() - 1; i++)
     { fl_line(x_screen(l.points[i    ].x),
               y_screen(l.points[i    ].y),
