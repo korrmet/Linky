@@ -1,0 +1,224 @@
+(root) {
+    (inputs) {
+        (0)<string>[0] {
+            (x)<int>[1]
+            (y)<int>[1]
+            (name)<string>[I_0]
+            (point) {
+                (x)<int>[6]
+                (y)<int>[2]
+            }
+            (net)<string>[0]
+            (vout)<string>[1]
+        }
+    }
+    (units) {
+        (1)<string>[6] {
+            (x)<int>[13]
+            (y)<int>[4]
+            (type)<string>[loopback]
+            (value)<int>[1]
+            (inputs) {
+                (0)<string>[7] {
+                    (x)<int>[18]
+                    (y)<int>[5]
+                    (net)<string>[2]
+                }
+            }
+            (outputs) {
+                (0)<string>[8] {
+                    (x)<int>[12]
+                    (y)<int>[5]
+                    (net)<string>[1]
+                }
+            }
+        }
+        (2)<string>[9] {
+            (x)<int>[9]
+            (y)<int>[9]
+            (type)<string>[function]
+            (function name)<string>[loopback]
+            (numerator poly)<string>[0;1;] {
+                (0)<float>[0.000000]
+                (1)<float>[1.000000]
+            }
+            (denominator poly)<string>[1;] {
+                (2)<float>[1.000000]
+            }
+            (inputs) {
+                (0)<string>[10] {
+                    (x)<int>[8]
+                    (y)<int>[10]
+                    (net)<string>[0]
+                }
+            }
+            (outputs) {
+                (0)<string>[11] {
+                    (x)<int>[20]
+                    (y)<int>[10]
+                    (net)<string>[3]
+                }
+            }
+        }
+        (3)<string>[12] {
+            (x)<int>[10]
+            (y)<int>[1]
+            (type)<string>[sum]
+            (inputs) {
+                (0)<string>[13] {
+                    (x)<int>[10]
+                    (y)<int>[2]
+                    (net)<string>[0]
+                }
+                (1)<string>[14] {
+                    (x)<int>[11]
+                    (y)<int>[3]
+                    (net)<string>[1]
+                }
+            }
+            (outputs) {
+                (0)<string>[15] {
+                    (x)<int>[12]
+                    (y)<int>[2]
+                    (net)<string>[2]
+                }
+            }
+        }
+    }
+    (outputs) {
+        (0)<string>[2] {
+            (x)<int>[22]
+            (y)<int>[1]
+            (name)<string>[O_0]
+            (point) {
+                (x)<int>[23]
+                (y)<int>[2]
+            }
+            (net)<string>[2]
+            (vin)<string>[3]
+        }
+        (1)<string>[4] {
+            (x)<int>[22]
+            (y)<int>[9]
+            (name)<string>[O_1]
+            (point) {
+                (x)<int>[23]
+                (y)<int>[10]
+            }
+            (net)<string>[3]
+            (vin)<string>[5]
+        }
+    }
+    (wires) {
+        (0) {
+            (0) {
+                (x)<int>[7]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[10]
+                (y)<int>[2]
+            }
+        }
+        (1) {
+            (0) {
+                (x)<int>[11]
+                (y)<int>[3]
+            }
+            (1) {
+                (x)<int>[11]
+                (y)<int>[5]
+            }
+        }
+        (2) {
+            (0) {
+                (x)<int>[11]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[12]
+                (y)<int>[5]
+            }
+        }
+        (3) {
+            (0) {
+                (x)<int>[12]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[20]
+                (y)<int>[2]
+            }
+        }
+        (4) {
+            (0) {
+                (x)<int>[20]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[23]
+                (y)<int>[2]
+            }
+        }
+        (5) {
+            (0) {
+                (x)<int>[20]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[20]
+                (y)<int>[5]
+            }
+        }
+        (6) {
+            (0) {
+                (x)<int>[20]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[18]
+                (y)<int>[5]
+            }
+        }
+        (7) {
+            (0) {
+                (x)<int>[7]
+                (y)<int>[10]
+            }
+            (1) {
+                (x)<int>[8]
+                (y)<int>[10]
+            }
+        }
+        (8) {
+            (0) {
+                (x)<int>[20]
+                (y)<int>[10]
+            }
+            (1) {
+                (x)<int>[23]
+                (y)<int>[10]
+            }
+        }
+        (9) {
+            (0) {
+                (x)<int>[6]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[7]
+                (y)<int>[2]
+            }
+        }
+        (10) {
+            (0) {
+                (x)<int>[7]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[7]
+                (y)<int>[10]
+            }
+        }
+    }
+}
