@@ -1,0 +1,8 @@
+parameters:x_min=0;x_max=10;y_min=-2;y_max=2;endpoint=10;Ts=0.01;
+y_markers:0;
+signal:name=sig_in;type=sine;period=2;v_min=-1;v_max=1;
+signal:name=gain;type=step;v_min=0;v_max=2;delay=0;
+signal:name=level;type=step;v_min=0;v_max=1;delay=0
+line:name=sig_in;type=input;color=0000FF;
+line:name=sig_out;type=output;color=00FF00;
+

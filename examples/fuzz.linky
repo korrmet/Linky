@@ -1,0 +1,214 @@
+(root) {
+    (inputs) {
+        (0) {
+            (x)<int>[2]
+            (y)<int>[5]
+            (name)<string>[sig_in]
+            (point) {
+                (x)<int>[11]
+                (y)<int>[6]
+            }
+        }
+        (1) {
+            (x)<int>[2]
+            (y)<int>[9]
+            (name)<string>[gain]
+            (point) {
+                (x)<int>[8]
+                (y)<int>[10]
+            }
+        }
+        (2) {
+            (x)<int>[2]
+            (y)<int>[13]
+            (name)<string>[level]
+            (point) {
+                (x)<int>[10]
+                (y)<int>[14]
+            }
+        }
+    }
+    (units) {
+        (0) {
+            (x)<int>[19]
+            (y)<int>[5]
+            (type)<string>[limit max]
+            (value)<float>[1.000000]
+            (inputs) {
+                (0) {
+                    (x)<int>[18]
+                    (y)<int>[6]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[35]
+                    (y)<int>[6]
+                }
+            }
+        }
+        (1) {
+            (x)<int>[39]
+            (y)<int>[5]
+            (type)<string>[limit min]
+            (value)<float>[-1.000000]
+            (inputs) {
+                (0) {
+                    (x)<int>[38]
+                    (y)<int>[6]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[56]
+                    (y)<int>[6]
+                }
+            }
+        }
+        (2) {
+            (x)<int>[13]
+            (y)<int>[5]
+            (type)<string>[product]
+            (inputs) {
+                (0) {
+                    (x)<int>[13]
+                    (y)<int>[6]
+                }
+                (1) {
+                    (x)<int>[14]
+                    (y)<int>[7]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[15]
+                    (y)<int>[6]
+                }
+            }
+        }
+        (3) {
+            (x)<int>[59]
+            (y)<int>[5]
+            (type)<string>[product]
+            (inputs) {
+                (0) {
+                    (x)<int>[59]
+                    (y)<int>[6]
+                }
+                (1) {
+                    (x)<int>[60]
+                    (y)<int>[7]
+                }
+            }
+            (outputs) {
+                (0) {
+                    (x)<int>[61]
+                    (y)<int>[6]
+                }
+            }
+        }
+    }
+    (outputs) {
+        (0) {
+            (x)<int>[63]
+            (y)<int>[5]
+            (name)<string>[sig_out]
+            (point) {
+                (x)<int>[64]
+                (y)<int>[6]
+            }
+        }
+    }
+    (wires) {
+        (0) {
+            (0) {
+                (x)<int>[11]
+                (y)<int>[6]
+            }
+            (1) {
+                (x)<int>[13]
+                (y)<int>[6]
+            }
+        }
+        (1) {
+            (0) {
+                (x)<int>[8]
+                (y)<int>[10]
+            }
+            (1) {
+                (x)<int>[14]
+                (y)<int>[10]
+            }
+        }
+        (2) {
+            (0) {
+                (x)<int>[14]
+                (y)<int>[10]
+            }
+            (1) {
+                (x)<int>[14]
+                (y)<int>[7]
+            }
+        }
+        (3) {
+            (0) {
+                (x)<int>[15]
+                (y)<int>[6]
+            }
+            (1) {
+                (x)<int>[18]
+                (y)<int>[6]
+            }
+        }
+        (4) {
+            (0) {
+                (x)<int>[35]
+                (y)<int>[6]
+            }
+            (1) {
+                (x)<int>[38]
+                (y)<int>[6]
+            }
+        }
+        (5) {
+            (0) {
+                (x)<int>[56]
+                (y)<int>[6]
+            }
+            (1) {
+                (x)<int>[59]
+                (y)<int>[6]
+            }
+        }
+        (6) {
+            (0) {
+                (x)<int>[60]
+                (y)<int>[7]
+            }
+            (1) {
+                (x)<int>[60]
+                (y)<int>[14]
+            }
+        }
+        (7) {
+            (0) {
+                (x)<int>[60]
+                (y)<int>[14]
+            }
+            (1) {
+                (x)<int>[10]
+                (y)<int>[14]
+            }
+        }
+        (8) {
+            (0) {
+                (x)<int>[61]
+                (y)<int>[6]
+            }
+            (1) {
+                (x)<int>[64]
+                (y)<int>[6]
+            }
+        }
+    }
+}

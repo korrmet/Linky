@@ -13,4 +13,4 @@ build: clean
 	g++ app.cpp editor.cpp generator.cpp simulator.cpp -o linky $(FLAGS)
 
 clean:
-	rm -rf linky *.o *.so
+	rm -rf linky examples/*.h examples/*.c examples/*.so

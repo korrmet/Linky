@@ -1,0 +1,342 @@
+(root) {
+    (inputs) {
+        (0)<string>[0] {
+            (x)<int>[1]
+            (y)<int>[1]
+            (name)<string>[sig_in]
+            (point) {
+                (x)<int>[10]
+                (y)<int>[2]
+            }
+            (net)<string>[0]
+            (vout)<string>[1]
+        }
+        (1)<string>[2] {
+            (x)<int>[1]
+            (y)<int>[4]
+            (name)<string>[gain]
+            (point) {
+                (x)<int>[7]
+                (y)<int>[5]
+            }
+            (net)<string>[1]
+            (vout)<string>[3]
+        }
+        (2)<string>[4] {
+            (x)<int>[1]
+            (y)<int>[10]
+            (name)<string>[level]
+            (point) {
+                (x)<int>[9]
+                (y)<int>[11]
+            }
+            (net)<string>[6]
+            (vout)<string>[5]
+        }
+    }
+    (outputs) {
+        (0)<string>[6] {
+            (x)<int>[42]
+            (y)<int>[1]
+            (name)<string>[sig_out]
+            (point) {
+                (x)<int>[43]
+                (y)<int>[2]
+            }
+            (net)<string>[8]
+            (vin)<string>[7]
+        }
+    }
+    (units) {
+        (0)<string>[8] {
+            (x)<int>[34]
+            (y)<int>[1]
+            (type)<string>[division]
+            (inputs) {
+                (0)<string>[9] {
+                    (x)<int>[34]
+                    (y)<int>[2]
+                    (net)<string>[2]
+                }
+                (1)<string>[10] {
+                    (x)<int>[35]
+                    (y)<int>[3]
+                    (net)<string>[5]
+                }
+            }
+            (outputs) {
+                (0)<string>[11] {
+                    (x)<int>[36]
+                    (y)<int>[2]
+                    (net)<string>[7]
+                }
+            }
+        }
+        (1)<string>[12] {
+            (x)<int>[18]
+            (y)<int>[4]
+            (type)<string>[constant]
+            (value)<float>[1.000000]
+            (outputs) {
+                (0)<string>[13] {
+                    (x)<int>[28]
+                    (y)<int>[5]
+                    (net)<string>[4]
+                }
+            }
+        }
+        (2)<string>[14] {
+            (x)<int>[30]
+            (y)<int>[4]
+            (type)<string>[sum]
+            (inputs) {
+                (0)<string>[15] {
+                    (x)<int>[30]
+                    (y)<int>[5]
+                    (net)<string>[4]
+                }
+                (1)<string>[16] {
+                    (x)<int>[31]
+                    (y)<int>[6]
+                    (net)<string>[3]
+                }
+            }
+            (outputs) {
+                (0)<string>[17] {
+                    (x)<int>[32]
+                    (y)<int>[5]
+                    (net)<string>[5]
+                }
+            }
+        }
+        (3)<string>[18] {
+            (x)<int>[20]
+            (y)<int>[7]
+            (type)<string>[abs]
+            (inputs) {
+                (0)<string>[19] {
+                    (x)<int>[19]
+                    (y)<int>[8]
+                    (net)<string>[2]
+                }
+            }
+            (outputs) {
+                (0)<string>[20] {
+                    (x)<int>[25]
+                    (y)<int>[8]
+                    (net)<string>[3]
+                }
+            }
+        }
+        (4)<string>[21] {
+            (x)<int>[12]
+            (y)<int>[1]
+            (type)<string>[product]
+            (inputs) {
+                (0)<string>[22] {
+                    (x)<int>[12]
+                    (y)<int>[2]
+                    (net)<string>[0]
+                }
+                (1)<string>[23] {
+                    (x)<int>[13]
+                    (y)<int>[3]
+                    (net)<string>[1]
+                }
+            }
+            (outputs) {
+                (0)<string>[24] {
+                    (x)<int>[14]
+                    (y)<int>[2]
+                    (net)<string>[2]
+                }
+            }
+        }
+        (5)<string>[25] {
+            (x)<int>[38]
+            (y)<int>[1]
+            (type)<string>[product]
+            (inputs) {
+                (0)<string>[26] {
+                    (x)<int>[38]
+                    (y)<int>[2]
+                    (net)<string>[7]
+                }
+                (1)<string>[27] {
+                    (x)<int>[39]
+                    (y)<int>[3]
+                    (net)<string>[6]
+                }
+            }
+            (outputs) {
+                (0)<string>[28] {
+                    (x)<int>[40]
+                    (y)<int>[2]
+                    (net)<string>[8]
+                }
+            }
+        }
+    }
+    (wires) {
+        (0) {
+            (0) {
+                (x)<int>[10]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[12]
+                (y)<int>[2]
+            }
+        }
+        (1) {
+            (0) {
+                (x)<int>[7]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[13]
+                (y)<int>[5]
+            }
+        }
+        (2) {
+            (0) {
+                (x)<int>[13]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[13]
+                (y)<int>[3]
+            }
+        }
+        (3) {
+            (0) {
+                (x)<int>[14]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[16]
+                (y)<int>[2]
+            }
+        }
+        (4) {
+            (0) {
+                (x)<int>[16]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[16]
+                (y)<int>[8]
+            }
+        }
+        (5) {
+            (0) {
+                (x)<int>[16]
+                (y)<int>[8]
+            }
+            (1) {
+                (x)<int>[19]
+                (y)<int>[8]
+            }
+        }
+        (6) {
+            (0) {
+                (x)<int>[25]
+                (y)<int>[8]
+            }
+            (1) {
+                (x)<int>[31]
+                (y)<int>[8]
+            }
+        }
+        (7) {
+            (0) {
+                (x)<int>[31]
+                (y)<int>[8]
+            }
+            (1) {
+                (x)<int>[31]
+                (y)<int>[6]
+            }
+        }
+        (8) {
+            (0) {
+                (x)<int>[28]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[30]
+                (y)<int>[5]
+            }
+        }
+        (9) {
+            (0) {
+                (x)<int>[16]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[34]
+                (y)<int>[2]
+            }
+        }
+        (10) {
+            (0) {
+                (x)<int>[32]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[35]
+                (y)<int>[5]
+            }
+        }
+        (11) {
+            (0) {
+                (x)<int>[35]
+                (y)<int>[5]
+            }
+            (1) {
+                (x)<int>[35]
+                (y)<int>[3]
+            }
+        }
+        (12) {
+            (0) {
+                (x)<int>[9]
+                (y)<int>[11]
+            }
+            (1) {
+                (x)<int>[39]
+                (y)<int>[11]
+            }
+        }
+        (13) {
+            (0) {
+                (x)<int>[36]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[38]
+                (y)<int>[2]
+            }
+        }
+        (14) {
+            (0) {
+                (x)<int>[39]
+                (y)<int>[3]
+            }
+            (1) {
+                (x)<int>[39]
+                (y)<int>[11]
+            }
+        }
+        (15) {
+            (0) {
+                (x)<int>[40]
+                (y)<int>[2]
+            }
+            (1) {
+                (x)<int>[43]
+                (y)<int>[2]
+            }
+        }
+    }
+}

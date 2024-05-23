@@ -146,10 +146,20 @@ void simulator::chart::draw()
   { if (l.points.size() == 0) { continue; } // empty line, skip it
     fl_color(Fl_Color(l.color));
     for (unsigned int i = 0; i < l.points.size() - 1; i++)
-    { fl_line(x_screen(l.points[i    ].x),
+    { // TODO: make it as option
+      // fl_line(x_screen(l.points[i    ].x),
+      //         y_screen(l.points[i    ].y),
+      //         x_screen(l.points[i + 1].x),
+      //         y_screen(l.points[i + 1].y));
+      fl_line(x_screen(l.points[i    ].x),
               y_screen(l.points[i    ].y),
               x_screen(l.points[i + 1].x),
-              y_screen(l.points[i + 1].y)); } }
+              y_screen(l.points[i    ].y));
+      fl_line(x_screen(l.points[i + 1].x),
+              y_screen(l.points[i    ].y),
+              x_screen(l.points[i + 1].x),
+              y_screen(l.points[i + 1].y));
+    } }
 
   fl_color(WHITE);
   for (float m : x_markers)

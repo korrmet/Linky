@@ -144,6 +144,7 @@ class circuit_calculator
 };
 // <---
 
+// ---> handler
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
@@ -302,6 +303,7 @@ void generator::handler(void* ctx, IM mess)
               fname.c_str(), oname.c_str(), fname.c_str(), nid.c_str()); }
       // <---
       
+      // ---> units
       else if (type == "unit")
       { // ---> constant
         if (unit_type == "constant")
@@ -515,7 +517,81 @@ void generator::handler(void* ctx, IM mess)
             print(source, "  context[%s_unit_%s] = context[%s_net_%s];\n",
                   fname.c_str(), id.c_str(), fname.c_str(), inid.c_str()); } }
         // <---
-      } }
+        
+        // ---> coefficient
+        else if (unit_type == "coeff")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          float value = circuit[ROOT/"units"/id/"value"];
+
+          print(source, "  context[%s_net_%s] = %f * [%s_net_%s];\n",
+                fname.c_str(), onid.c_str(),
+                value,
+                fname.c_str(), inid.c_str()); }
+        // <---
+        
+        // ---> abs
+        else if (unit_type == "abs")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+
+          print(source, "  context[%s_net_%s]  = "
+                        "context[%s_net_%s] * (context[%s_net_%s] > 0);\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), inid.c_str(),
+                fname.c_str(), inid.c_str());
+
+          print(source, "  context[%s_net_%s] -= "
+                        "context[%s_net_%s] * (context[%s_net_%s] < 0);\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), inid.c_str(),
+                fname.c_str(), inid.c_str()); }
+        // <---
+        
+        // ---> limit max
+        else if (unit_type == "limit max")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          float value = circuit[ROOT/"units"/id/"value"];
+
+          print(source, "  context[%s_net_%s]  = "
+                        "%f * (context[%s_net_%s] >= %f);\n",
+                fname.c_str(), onid.c_str(),
+                value,
+                fname.c_str(), inid.c_str(),
+                value);
+
+          print(source, "  context[%s_net_%s] += "
+                        "context[%s_net_%s] * (context[%s_net_%s] < %f);\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), inid.c_str(),
+                fname.c_str(), inid.c_str(),
+                value); }
+        // <---
+        
+        // ---> limit min
+        else if (unit_type == "limit min")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          float value = circuit[ROOT/"units"/id/"value"];
+
+          print(source, "  context[%s_net_%s]  = "
+                        "%f * (context[%s_net_%s] <= %f);\n",
+                fname.c_str(), onid.c_str(),
+                value,
+                fname.c_str(), inid.c_str(),
+                value);
+
+          print(source, "  context[%s_net_%s] += "
+                        "context[%s_net_%s] * (context[%s_net_%s] > %f);\n",
+                fname.c_str(), onid.c_str(),
+                fname.c_str(), inid.c_str(),
+                fname.c_str(), inid.c_str(),
+                value); }
+        // <---
+      }
+      // <---
+    }
     print(source, "}\n");
 
     std::ofstream source_file(source_name);
@@ -832,3 +908,4 @@ void generator::handler(void* ctx, IM mess)
       { context.del(ROOT/"sequence errors"/error); break; } } }
   // <---
 }
+// <---
