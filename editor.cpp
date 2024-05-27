@@ -20,6 +20,29 @@
 
 #define CSIZE 5
 
+class settingsWindow : public Fl_Window
+{ public:
+  settingsWindow()
+  : Fl_Window(300, 80),
+    label(5, 5, 290, 20, "Path to the compiler"),
+    compiler_input(5, 25, 290, 20),
+    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save")
+  { save_btn.callback(save_cb, (void*)this);
+    compiler_input.value(((std::string)
+                          params[ROOT/"compiler path"]).c_str());
+    set_modal(); show(); }
+
+  static void save_cb(Fl_Widget* w, void* arg)
+  { settingsWindow* that = (settingsWindow*)arg;
+    params[ROOT/"compiler path"] = that->compiler_input.value();
+    bus(IM("settings file save"));
+    that->hide(); }
+
+  Fl_Input  compiler_input;
+  Fl_Box    label;
+  Fl_Button save_btn;
+};
+
 // ---> edit input window
 class inputEditWindow : public Fl_Window
 { public:
@@ -497,7 +520,7 @@ void editor::workspace::draw()
   // <---
 
   // ---> grid
-  fl_color(LBLUE);
+  fl_color(LBLUE); fl_line_style(FL_SOLID, 1);
   if (!context(ROOT/"grid size")) { context[ROOT/"grid size"] = 20; }
   for (unsigned int i = 0; i < w(); i += (int)context[ROOT/"grid size"])
   { fl_line(x() + i, y(), x() + i, y() + h()); }
@@ -506,7 +529,7 @@ void editor::workspace::draw()
   // <---
 
   // ---> inputs
-  fl_color(BLACK);
+  fl_color(BLACK); fl_line_style(FL_SOLID, 1);
   for (std::string input : circuit.ls(ROOT/"inputs"))
   { int _x[6] = { 0 }; int _y[6] = { 0 };
 
@@ -1204,7 +1227,7 @@ void editor::workspace::draw()
           y() + y_screen((int)context[ROOT/"cursor pos"/"y"]) + CSIZE);
   // <---
 
-  fl_line_style(0); fl_color(0); fl_pop_clip(); }
+  fl_line_style(FL_SOLID, 1); fl_color(0); fl_pop_clip(); }
 // <---
 
 // ---> constructor
@@ -1235,6 +1258,7 @@ editor::window::window()
   menu_bar.add("File/Save", 0, control_cb, (void*)"save");
   menu_bar.add("File/Save As", 0, control_cb, (void*)"save as");
   menu_bar.add("Help", 0, control_cb, (void*)"help");
+  menu_bar.add("Settings", 0, control_cb, (void*)"settings");
 
 #ifdef DEBUG
   menu_bar.add("Debug/Print circuit", 0, control_cb, (void*)"print circuit");
@@ -1580,6 +1604,9 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "print context")
   { PRINT("Context:\n%s\n", context.serialize().c_str()); }
 
+  else if (cmd == "settings")
+  { settingsWindow sett; while (sett.shown()) { Fl::wait(); } }
+
   else if (cmd == "generate code")
   { bus(IM("check circuit errors"));
     bool fail = false;
@@ -1610,7 +1637,11 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
     if (path) { bus(IM("file save") << IV("path", path)); } }
 
   else if (cmd == "help")
-  { fl_message("Linky\nv0\nsimple digital circuit simulator"); }
+  { std::string mess;
+    mess.append("Linky ")
+        .append(VERSION)
+        .append("\nSimple digital circuits simulator.");
+    fl_message("%s", mess.c_str()); }
 
   else if (cmd == "simulate")
   { bus(IM("check circuit errors"));

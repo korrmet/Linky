@@ -1,7 +1,15 @@
 #include "simulator.hpp"
+#include "app.hpp"
 #include <cmath>
 #include <cstdlib>
+
+#ifdef LINUX
 #include <dlfcn.h>
+#endif
+
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
@@ -274,7 +282,8 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
 
   // ---> compiling the sources to the shared library for simulation core
   std::string compile_code;
-  print(compile_code, "gcc ");
+  print(compile_code, "%s ",
+        ((std::string)::params[ROOT/"compiler path"]).c_str());
   for (std::string sfile : that->sim_params.source_files)
   { print(compile_code, "%s ", sfile.c_str()); }
   print(compile_code, "-o sim.so -fPIC -shared",
@@ -309,7 +318,12 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
     { i_array[ctr] = sim_base.i(input).values[i]; ctr++; }
     
     // run the code
+#ifdef LINUX
     sim_func(i_array, o_array, c_array);
+#endif
+
+#ifdef WINDOWS
+#endif
     
     // copy all of the output values to the i-th outputs from the simulation
     // database
