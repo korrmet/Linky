@@ -1621,20 +1621,20 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
 
   else if (cmd == "open")
   { char* path = fl_file_chooser("Open file", "*.linky", nullptr, true);
-    if (path) { bus(IM("file open") << IV("path", path)); }
+    if (path) { bus(IM("file open") << iv("path", path)); }
     bus(IM("screen update")); }
 
   else if (cmd == "save")
   { if (!params(ROOT/"circruit file path"))
     { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
-      if (path) { bus(IM("file save") << IV("path", path)); } }
+      if (path) { bus(IM("file save") << iv("path", path)); } }
     else
     { bus(IM("file save")
-          << IV("path", (std::string)context[ROOT/"circuit file path"])); } }
+          << iv("path", (std::string)context[ROOT/"circuit file path"])); } }
 
   else if (cmd == "save as")
   { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
-    if (path) { bus(IM("file save") << IV("path", path)); } }
+    if (path) { bus(IM("file save") << iv("path", path)); } }
 
   else if (cmd == "help")
   { std::string mess;

@@ -292,10 +292,15 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
   // <---
 
   // ---> loading compiled library
+#ifdef LINUX
   void* sim_handle = dlopen("./sim.so", RTLD_LAZY);
   void (*sim_func)(float* inputs, float* ouputs, float* context)
     = (void (*)(float*, float*, float*))
       dlsym(sim_handle, that->sim_params.circuit_name.c_str());
+#endif
+
+#ifdef WINDOWS
+#endif
   // <---
 
   // ---> run the simulation using signals values

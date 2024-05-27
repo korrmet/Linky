@@ -3,15 +3,16 @@ ifeq ($(platform),linux)
 CXX = g++
 COMPILE_FLAGS += $(shell fltk-config --cxxflags)
 COMPILE_FLAGS += -DLINUX
-LINK_FLAGS    += $(shell fltk-config --ldflags)
+LINK_FLAGS    += $(shell fltk-config --ldstaticflags)
 LINK_FLAGS    += $(shell fltk-config --libs)
 LINK_FLAGS    += -ldl
 else ifeq ($(platform),windows)
-CXX = mingw-w64-gcc
-COMPILE_FLAGS += $(shell mingw-w64-fltk-config --cxxflags)
+CXX = x86_64-w64-mingw32-g++
+COMPILE_FLAGS += $(shell x86_64-w64-mingw32-fltk-config --cxxflags)
 COMPILE_FLAGS += -DWINDOWS
-LINK_FLAGS    += $(shell mingw-w64-fltk-config --ldflags)
-LINK_FLAGS    += $(shell mingw-w64-fltk-config --libs)
+LINK_FLAGS    += $(shell x86_64-w64-mingw32-fltk-config --ldstaticflags)
+LINK_FLAGS    += $(shell x86_64-w64-mingw32-fltk-config --libs)
+LINK_FLAGS    += -static
 endif
 
 build_type = release
@@ -26,6 +27,8 @@ linky: app.o editor.o generator.o simulator.o
 
 run: linky
 	./linky
+
+linky.AppImage: linky
 
 app.o: app.cpp app.hpp
 	$(CXX) -c app.cpp -o app.o $(COMPILE_FLAGS)
@@ -49,4 +52,4 @@ simulator.cpp:
 simulator.hpp:
 
 clean:
-	rm -rf linky *.o examples/*.h examples/*.c examples/*.so
+	rm -rf linky linky.exe *.o examples/*.h examples/*.c examples/*.so

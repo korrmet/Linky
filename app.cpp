@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     settings_file.close();
     params.parse(data.str()); }
   
-  if (argc > 1) { bus(IM("file open") << IV("path", argv[1])); }
+  if (argc > 1) { bus(IM("file open") << iv("path", argv[1])); }
   if (argc > 2 && std::string("--generate") == argv[2])
   { bus(IM("check circuit errors"));
     bus(IM("generate code"));

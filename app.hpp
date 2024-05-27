@@ -3,7 +3,7 @@
 
 #include "independency.hpp"
 
-#define IV independency::value
+#define iv independency::value
 #define IM independency::message
 #define IC independency::callback
 #define IP independency::path
