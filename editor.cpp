@@ -20,29 +20,6 @@
 
 #define CSIZE 5
 
-class settingsWindow : public Fl_Window
-{ public:
-  settingsWindow()
-  : Fl_Window(300, 80),
-    label(5, 5, 290, 20, "Path to the compiler"),
-    compiler_input(5, 25, 290, 20),
-    save_btn((300 / 2) - (60 / 2), 50, 60, 20, "Save")
-  { save_btn.callback(save_cb, (void*)this);
-    compiler_input.value(((std::string)
-                          params[ROOT/"compiler path"]).c_str());
-    set_modal(); show(); }
-
-  static void save_cb(Fl_Widget* w, void* arg)
-  { settingsWindow* that = (settingsWindow*)arg;
-    params[ROOT/"compiler path"] = that->compiler_input.value();
-    bus(IM("settings file save"));
-    that->hide(); }
-
-  Fl_Input  compiler_input;
-  Fl_Box    label;
-  Fl_Button save_btn;
-};
-
 // ---> edit input window
 class inputEditWindow : public Fl_Window
 { public:
@@ -189,68 +166,6 @@ class functionEditWindow : public Fl_Window
   std::string unit_name; };
 // <---
 
-// ---> edit code window
-class codeEditWindow : public Fl_Window
-{ public:
-  codeEditWindow(std::string name)
-  : Fl_Window(300, 255),
-    file_name_label(5, 5, 290, 20, "File name (in current circuit directory)"),
-    file_name_input(5, 25, 290, 20),
-    function_name_label(5, 50, 290, 20, "Name of the function"),
-    function_name_input(5, 70, 290, 20),
-    inputs_list_label(5, 95, 290, 20, "List of the input names separated by \";\""),
-    inputs_list_input(5, 115, 290, 20),
-    outputs_list_label(5, 140, 290, 20, "List of the output names separated by \";\""),
-    outputs_list_input(5, 160, 290, 20),
-    context_size_label(5, 185, 290, 20, "Size of the context of function"),
-    context_size_input(5, 205, 290, 20),
-    save_btn((300 / 2) - (60 / 2), 230, 60, 20, "Save"),
-    unit_name(name)
-  { save_btn.callback(save_cb, (void*)this);
-    file_name_input.value(((std::string)
-                           circuit[ROOT/"units"/name/"source file"]
-                          ).c_str());
-    function_name_input.value(((std::string)
-                               circuit[ROOT/"units"/name/"function name"]
-                              ).c_str());
-    inputs_list_input.value(((std::string)
-                             circuit[ROOT/"units"/name/"inputs names"]
-                            ).c_str());
-    outputs_list_input.value(((std::string)
-                              circuit[ROOT/"units"/name/"outputs names"]
-                             ).c_str());
-    context_size_input.step(1);
-    context_size_input.value((int)circuit[ROOT/"units"/name/"context size"]);
-    set_modal(); show(); }
-
-  static void save_cb(Fl_Widget* w, void* arg)
-  { codeEditWindow* that = (codeEditWindow*)arg;
-    circuit[ROOT/"units"/that->unit_name/"source file"]
-      = that->file_name_input.value();
-    circuit[ROOT/"units"/that->unit_name/"function name"]
-      = that->function_name_input.value();
-    circuit[ROOT/"units"/that->unit_name/"inputs names"]
-      = that->inputs_list_input.value();
-    circuit[ROOT/"units"/that->unit_name/"outputs names"]
-      = that->outputs_list_input.value();
-    circuit[ROOT/"units"/that->unit_name/"context size"]
-      = (int)that->context_size_input.value();
-    bus(IM("screen update")); that->hide(); }
-  
-  Fl_Box         file_name_label;
-  Fl_Input       file_name_input;
-  Fl_Box         function_name_label;
-  Fl_Input       function_name_input;
-  Fl_Box         inputs_list_label;
-  Fl_Input       inputs_list_input;
-  Fl_Box         outputs_list_label;
-  Fl_Input       outputs_list_input;
-  Fl_Box         context_size_label;
-  Fl_Value_Input context_size_input;
-  Fl_Button      save_btn;
-  std::string    unit_name; };
-// <---
-
 // ---> edit loopback window
 class loopbackEditWindow : public Fl_Window
 { public:
@@ -369,7 +284,6 @@ static Fl_Button* diff_button          = nullptr;
 static Fl_Button* prod_button          = nullptr;
 static Fl_Button* div_button           = nullptr;
 static Fl_Button* function_button      = nullptr;
-static Fl_Button* code_button          = nullptr;
 static Fl_Button* loopback_button      = nullptr;
 static Fl_Button* coeff_button         = nullptr;
 static Fl_Button* abs_button           = nullptr;
@@ -419,7 +333,6 @@ int editor::workspace::handle(int event)
     { if (context[ROOT/"shift"] == 1) { bus(IM("add div")); }
       if (context[ROOT/"shift"] == 0) { bus(IM("add prod")); } }
     else if (Fl::event_key() == 'f') { bus(IM("add function")); }
-    else if (Fl::event_key() == 'b') { bus(IM("add code block")); }
     else if (Fl::event_key() == 'l') { bus(IM("add loopback")); }
     else if (Fl::event_key() == 'k') { bus(IM("add coefficient")); }
     else if (Fl::event_key() == 'a') { bus(IM("add abs")); }
@@ -793,79 +706,6 @@ void editor::workspace::draw()
              x() + x_screen(_x0), y() + y_screen(_y0),
              pixel_w, 2 * (int)context[ROOT/"grid size"],
              FL_ALIGN_LEFT); }
-    // <---
-    
-    // ---> code block
-    else if (circuit[ROOT/"units"/unit/"type"] == "code block")
-    { fl_color(BLACK); fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
-      int _x0 = circuit[ROOT/"units"/unit/"x"];
-      int _y0 = circuit[ROOT/"units"/unit/"y"];
-      std::string label = (std::string)circuit[ROOT/"units"/unit/"source file"];
-      label.append(":");
-      label.append((std::string)circuit[ROOT/"units"/unit/"function name"]);
-      int pixel_w = fl_width(label.c_str());
-
-      std::string inputs
-        = (std::string)circuit[ROOT/"units"/unit/"inputs names"];
-      std::list<std::string> ilist;
-      std::string current_i;
-      for (char c : inputs)
-      { if (c == ';') { ilist.push_back(current_i); current_i.clear();
-                        continue; }
-        current_i.push_back(c); }
-      for (std::string input : ilist)
-      { int pw = fl_width(input.c_str());
-        if (pw > pixel_w) { pixel_w = pw; } }
-
-      std::string outputs
-        = (std::string)circuit[ROOT/"units"/unit/"outputs names"];
-      std::list<std::string> olist;
-      std::string current_o;
-      for (char c : outputs)
-      { if (c == ';') { olist.push_back(current_o); current_o.clear();
-                        continue; }
-        current_o.push_back(c); }
-      for (std::string output : olist)
-      { int pw = fl_width(output.c_str());
-        if (pw > pixel_w) { pixel_w = pw; } }
-
-      int label_w = pixel_w / (int)context[ROOT/"grid size"] + 1;
-      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0),
-              label_w * (int)context[ROOT/"grid size"],
-              2 * (int)context[ROOT/"grid size"]);
-      fl_draw(label.c_str(),
-              x() + x_screen(_x0), y() + y_screen(_y0),
-              pixel_w, 2 * (int)context[ROOT/"grid size"],
-              FL_ALIGN_LEFT);
-
-      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2),
-              label_w * (int)context[ROOT/"grid size"],
-              ilist.size() * 2 * (int)context[ROOT/"grid size"]);
-      int icount = 0;
-      for (std::string input : ilist)
-      { fl_draw(input.c_str(),
-                x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * icount),
-                pixel_w, 2 * (int)context[ROOT/"grid size"],
-                FL_ALIGN_LEFT);
-        circuit[ROOT/"units"/unit/"inputs"/icount/"x"] = _x0;
-        circuit[ROOT/"units"/unit/"inputs"/icount/"y"]
-          = _y0 + 2 + 2 * icount + 1;
-        icount++; }
-
-      fl_rect(x() + x_screen(_x0), y() + y_screen(_y0 + 2 + 2 * ilist.size()),
-              label_w * (int)context[ROOT/"grid size"],
-              olist.size() * 2 * (int)context[ROOT/"grid size"]);
-      int ocount = 0;
-      for (std::string output : olist)
-      { fl_draw(output.c_str(),
-                x() + x_screen(_x0),
-                y() + y_screen(_y0 + 2 + 2 * ilist.size() + 2 * ocount),
-                pixel_w, 2 * (int)context[ROOT/"grid size"],
-                FL_ALIGN_LEFT);
-        circuit[ROOT/"units"/unit/"outputs"/ocount/"x"] = _x0 + label_w;
-        circuit[ROOT/"units"/unit/"outputs"/ocount/"y"]
-          = _y0 + 2 + 2 * (int)ilist.size() + 2 * ocount + 1;
-        ocount++; } }
     // <---
   
     // ---> loopback
@@ -1257,8 +1097,7 @@ editor::window::window()
   menu_bar.add("File/Open", 0, control_cb, (void*)"open");
   menu_bar.add("File/Save", 0, control_cb, (void*)"save");
   menu_bar.add("File/Save As", 0, control_cb, (void*)"save as");
-  menu_bar.add("Help", 0, control_cb, (void*)"help");
-  menu_bar.add("Settings", 0, control_cb, (void*)"settings");
+  menu_bar.add("About", 0, control_cb, (void*)"about");
 
 #ifdef DEBUG
   menu_bar.add("Debug/Print circuit", 0, control_cb, (void*)"print circuit");
@@ -1483,18 +1322,19 @@ editor::window::window()
   side_screen.add(function_button);
   // <---
   
-  // ---> code
-  code_button = new Fl_Button(div_button->x(),
-                              div_button->y() + div_button->h() + 5,
-                              div_button->w(),
-                              20, "Code Block [B]");
-  code_button->box(FL_BORDER_BOX);
-  code_button->labelsize(12);
-  code_button->clear_visible_focus();
-  code_button->color(Fl_Color(WHITE));
-  code_button->color2(Fl_Color(BLUE));
-  code_button->callback(control_cb, (void*)"add code block");
-  side_screen.add(code_button);
+  // ---> abs
+  abs_button = new Fl_Button(div_button->x(),
+                             div_button->y()
+                               + div_button->h() + 5,
+                             div_button->w(),
+                             20, "Abs value [A]");
+  abs_button->box(FL_BORDER_BOX);
+  abs_button->labelsize(12);
+  abs_button->clear_visible_focus();
+  abs_button->color(Fl_Color(WHITE));
+  abs_button->color2(Fl_Color(BLUE));
+  abs_button->callback(control_cb, (void*)"add abs");
+  side_screen.add(abs_button);
   // <---
   
   // ---> loopback
@@ -1513,9 +1353,9 @@ editor::window::window()
   // <---
   
   // ---> coeff
-  coeff_button = new Fl_Button(code_button->x(),
-                               code_button->y() + code_button->h() + 5,
-                               code_button->w(),
+  coeff_button = new Fl_Button(abs_button->x(),
+                               abs_button->y() + abs_button->h() + 5,
+                               abs_button->w(),
                                20, "Coefficient [K]");
   coeff_button->box(FL_BORDER_BOX);
   coeff_button->labelsize(12);
@@ -1526,25 +1366,10 @@ editor::window::window()
   side_screen.add(coeff_button);
   // <---
   
-  // ---> abs
-  abs_button = new Fl_Button(loopback_button->x(),
-                             loopback_button->y()
-                               + loopback_button->h() + 5,
-                             loopback_button->w(),
-                             20, "Abs value [A]");
-  abs_button->box(FL_BORDER_BOX);
-  abs_button->labelsize(12);
-  abs_button->clear_visible_focus();
-  abs_button->color(Fl_Color(WHITE));
-  abs_button->color2(Fl_Color(BLUE));
-  abs_button->callback(control_cb, (void*)"add abs");
-  side_screen.add(abs_button);
-  // <---
-  
   // ---> limit max
-  limit_max_button = new Fl_Button(abs_button->x(),
-                                   abs_button->y() + abs_button->h() + 5,
-                                   abs_button->w(),
+  limit_max_button = new Fl_Button(loopback_button->x(),
+                                   loopback_button->y() + loopback_button->h() + 5,
+                                   loopback_button->w(),
                                    20, "Limit Max [M]");
   limit_max_button->box(FL_BORDER_BOX);
   limit_max_button->labelsize(12);
@@ -1604,9 +1429,6 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   else if (cmd == "print context")
   { PRINT("Context:\n%s\n", context.serialize().c_str()); }
 
-  else if (cmd == "settings")
-  { settingsWindow sett; while (sett.shown()) { Fl::wait(); } }
-
   else if (cmd == "generate code")
   { bus(IM("check circuit errors"));
     bool fail = false;
@@ -1636,7 +1458,7 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
   { char* path = fl_file_chooser("Save File", "*.linky", nullptr, true);
     if (path) { bus(IM("file save") << iv("path", path)); } }
 
-  else if (cmd == "help")
+  else if (cmd == "about")
   { std::string mess;
     mess.append("Linky ")
         .append(VERSION)
@@ -1651,33 +1473,48 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
         context.ls(ROOT/"sequence errors").size()) { fail = true; }
     if (fail) { return; }
 
-    bus(IM("generate code"));
     bus(IM("screen update"));
 
     // preparing simulation parameters
-    simulator::params sp;
-    if (!context(ROOT/"simulation params")) { return; }
-    sp.circuit_name = (std::string)context[ROOT/"simulation params"/"name"];
-
-    std::string gen_name = sp.circuit_name;
-    gen_name.append(".c");
-    sp.source_files.push_back(gen_name);
-    
-    for (std::string unit : circuit.ls(ROOT/"units"))
-    { if (circuit[ROOT/"units"/unit/"type"] == "code block")
-      { sp.source_files.push_back((std::string)
-                                  circuit[ROOT/"units"/unit/"source file"]); } }
-
+    context.del(ROOT/"simulation params");
+    unsigned int counter = 0;
     for (std::string input : circuit.ls(ROOT/"inputs"))
-    { sp.inputs.push_back((std::string)
-                          circuit[ROOT/"inputs"/input/"name"]); }
-    
+    { context[ROOT/"simulation params"/"inputs"/input] = (int)counter;
+      counter++; }
+
+    counter = 0;
     for (std::string output : circuit.ls(ROOT/"outputs"))
-    { sp.outputs.push_back((std::string)
-                           circuit[ROOT/"outputs"/output/"name"]); }
-    
-    sp.context_size = (int)context[ROOT/"simulation params"/"context size"];
-    simulator::window sim(sp);
+    { context[ROOT/"simulation params"/"outputs"/output] = (int)counter;
+      counter++; }
+
+    unsigned int context_size = 0;
+    for (std::string unit : circuit.ls(ROOT/"units"))
+    { std::string utype = circuit[ROOT/"units"/unit/"type"];
+
+      if (utype == "delay")
+      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
+        context_size += (int)circuit[ROOT/"units"/unit/"value"]; }
+
+      if (utype == "function")
+      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
+        std::string num_poly = circuit[ROOT/"units"/unit/"numerator poly"];
+        std::string den_poly = circuit[ROOT/"units"/unit/"denominator poly"];
+        unsigned int num_count = 0;
+        unsigned int den_count = 0;
+        for (char c : num_poly) { if (c == ';') { num_count++; } }
+        for (char c : den_poly) { if (c == ';') { den_count++; } }
+        context_size += num_count;
+        context_size += den_count; }
+
+      if (utype == "loopback")
+      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
+        context_size += (int)circuit[ROOT/"units"/unit/"value"] - 1; } }
+
+    for (std::string net : context.ls(ROOT/"network"))
+    { context[ROOT/"simulation params"/"nets"/net] = (int)context_size;
+      context_size++; }
+
+    simulator::window sim;
     while (sim.shown()) { Fl::wait(); } }
 
   else { bus(IM(cmd)); } }
@@ -1748,12 +1585,6 @@ void editor::window::handler(void* ctx, IM mess)
     context[ROOT/"edit mode"] = "place function";
     that->redraw(); }
 
-  else if (mess == "add code block")
-  { bus(IM("end input"));
-    code_button->color(GREEN); code_button->redraw();
-    context[ROOT/"edit mode"] = "place code block";
-    that->redraw(); }
-
   else if (mess == "add loopback")
   { bus(IM("end input"));
     loopback_button->color(GREEN); loopback_button->redraw();
@@ -1802,7 +1633,6 @@ void editor::window::handler(void* ctx, IM mess)
     prod_button->color(WHITE); prod_button->redraw();
     div_button->color(WHITE); div_button->redraw();
     function_button->color(WHITE); function_button->redraw();
-    code_button->color(WHITE); code_button->redraw();
     loopback_button->color(WHITE); loopback_button->redraw();
     coeff_button->color(WHITE); coeff_button->redraw();
     abs_button->color(WHITE); abs_button->redraw();
@@ -1864,9 +1694,6 @@ void editor::window::handler(void* ctx, IM mess)
       else if (circuit[ROOT/"units"/unit/"type"] == "function")
       { functionEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
 
-      else if (circuit[ROOT/"units"/unit/"type"] == "code block")
-      { codeEditWindow w(unit); while (w.shown()) { Fl::wait(); } }
-
       else if (circuit[ROOT/"units"/unit/"type"] == "loopback")
       { loopbackEditWindow w(unit); while(w.shown()) { Fl::wait(); } }
 
@@ -1912,8 +1739,6 @@ void editor::window::handler(void* ctx, IM mess)
     { bus(IM("place div press")); }
     else if (context[ROOT/"edit mode"] == "place function")
     { bus(IM("place function press")); }
-    else if (context[ROOT/"edit mode"] == "place code block")
-    { bus(IM("place code block press")); }
     else if (context[ROOT/"edit mode"] == "place loopback")
     { bus(IM("place loopback press")); }
     else if (context[ROOT/"edit mode"] == "place coefficient")
@@ -2190,20 +2015,6 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[ROOT/"units"/idx/"function name"] = "";
     circuit[ROOT/"units"/idx/"numerator poly"] = "1;";
     circuit[ROOT/"units"/idx/"denominator poly"] = "1;";
-    that->redraw(); }
-    
-  else if (mess == "place code block press")
-  { circuit[ROOT/"units"];
-    std::list<std::string> units = circuit.ls(ROOT/"units");
-    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
-    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
-    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
-    circuit[ROOT/"units"/idx/"type"] = "code block";
-    circuit[ROOT/"units"/idx/"source file"] = "";
-    circuit[ROOT/"units"/idx/"function name"] = "";
-    circuit[ROOT/"units"/idx/"inputs names"] = "";
-    circuit[ROOT/"units"/idx/"outputs names"] = "";
-    circuit[ROOT/"units"/idx/"context size"] = 0;
     that->redraw(); }
 
   else if (mess == "place loopback press")

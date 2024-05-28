@@ -6,30 +6,11 @@
 #include <FL/Fl_Text_Editor.H>
 #include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Button.H>
-#include "app.hpp"
+#include <string>
 #include <vector>
 #include <list>
 
 namespace simulator {
-
-// ---> simulation input parameters
-struct params
-{ std::string circuit_name; // equal to the function name and file name
-  
-  // size of this list is equal <name>_inputs_size macro definition
-  // position of the input inside this list is equal to the macro definitions
-  std::list <std::string> inputs; 
-
-  // size of this list is equal <name>_outputs_size macro definition
-  // position of the output inside this list is equal to the macro definitions
-  std::list <std::string> outputs;
-
-  unsigned int context_size;
-
-  // list all of the files that needed to build the shared library, it MAY more
-  // than single file at least because of code blocks
-  std::list <std::string> source_files; };
-// <---
 
 // ---> simulation output chart
 class chart : public Fl_Widget
@@ -52,14 +33,12 @@ class chart : public Fl_Widget
 // ---> simulator window
 class window : public Fl_Window
 { public:
-  window(struct params sim_params);
+  window();
 
   virtual void resize(int x, int y, int w, int h);
   chart ch; Fl_Text_Editor params; Fl_Text_Buffer buf; Fl_Button run_btn;
 
   private:
-  struct params sim_params;
-
   struct signal
   { signal();
     void clear();

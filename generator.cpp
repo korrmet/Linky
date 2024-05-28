@@ -1,4 +1,5 @@
 #include "generator.hpp"
+#include "circuit_calculator.hpp"
 #include <fstream>
 
 // ---> string printf
@@ -18,144 +19,16 @@ inline void print(std::string& s, const char* fmt, ...)
   s.append(tmp); }
 // <---
 
-// ---> circuit calculator
-class circuit_calculator
-{ public:
-
-  /** \brief Adds unit to the calculator
-   *  \param id Identifier of the unit, should be unique for each */
-  circuit_calculator& u(std::string id)
-  { unit u; u.id = id; units.push_back(u); return *this; }
-
-  /** \brief Adds input to last added unit
-   *  \param id Identifier of the input, should be unique pin name inside
-   *            the unit */
-  circuit_calculator& i(std::string id)
-  { unit::pin p; p.id = id; units.back().i.push_back(p); return *this; }
-
-  /** \brief Adds output to last added unit
-   *  \param id     Identifier of the output, should be unique pin name
-   *                inside the unit
-   *  \param active This flag says that this output is alerady solved */
-  circuit_calculator& o(std::string id, bool active = false)
-  { unit::pin p; p.id = id; p.active = active;
-    units.back().o.push_back(p); return *this; }
-
-  /** \brief Connects unit pin to the net
-   *  \param uid Unit identifier string
-   *  \param pid Pin identifier string
-   *  \param nid Net identifier string */
-  circuit_calculator& connect(std::string uid,
-                              std::string pid,
-                              std::string nid)
-  { unit* u = nullptr;
-    if (!u)
-    { for (unit& i : units) { if (i.id == uid) { u = &i; break; } } }
-    if (!u) { return *this; }
-
-    unit::pin* p = nullptr;
-    if (!p)
-    { for (unit::pin& i : u->i) { if (i.id == pid) { p = &i; break; } } }
-    if (!p)
-    { for (unit::pin& i : u->o) { if (i.id == pid) { p = &i; break; } } }
-    if (!p) { return *this; }
-
-    p->nid = nid;
-
-    return *this; }
-
-  // ---> schedule
-  /** \brief Make sequence of units calculation
-   *  \param s Reference to the list of strings to store the sequence
-   *  \retrun Result of scheduling
-   *  \retval true Calculations was performed well, the list of strings
-   *               contains right sequence of the units
-   *  \retval false Something went wrong, some units can't be calculated
-   *                because of the possible loops */
-  bool schedule(std::list<std::string>& s)
-  { unsigned int count = 0;
-
-    do { count = 0;
-      for (unit& u : units)
-      { if (!u.o.size()) { continue; }
-        if (u.solved) { continue; }
-        unsigned int ocount = 0;
-        for (unit::pin& p : u.o) { if (p.active) { ocount++; } }
-        if (ocount == u.o.size())
-        { u.solved = true; s.push_back(u.id); count++; } }
-
-      if (count) { continue; }
-
-      for (unit& u : units)
-      { if (u.solved) { continue; }
-
-        unsigned int icount = 0;
-        for (unit::pin& p : u.i)
-        { unit::pin source;
-          if (p.nid == "") { break; }
-          if (!output(p.nid, source)) { break; }
-          if (!source.active) { break; }
-          p.active = true; icount++; }
-
-        if (icount == u.i.size())
-        { u.solved = true; for (unit::pin& p : u.o) { p.active = true; } }
-
-        if (u.solved) { s.push_back(u.id); count++; } }
-    } while (count);
-
-    unsigned int ucount = 0;
-    for (unit& u : units) { if (u.solved) { ucount++; } }
-    if (ucount != units.size()) { return false; }
-    return true; }
-  // <---
-
-  struct unit
-  { struct pin { pin() : active(false) {}
-                 bool active; std::string id; std::string nid; };
-    unit() : solved(false) {}
-    std::string id;
-    bool solved;
-    std::list<pin> i, o; };
-
-  private:
-  std::list<unit> units;
-
-  // ---> inputs
-  bool inputs(std::string nid, std::list<unit::pin*> pins)
-  { bool res = false;
-
-    for (unit& u : units)
-    { for (unit::pin& p : u.i)
-      { if (p.nid == nid) { pins.push_back(&p); }
-        res = true; } }
-
-    return res; }
-  // <---
-
-  // ---> output
-  // circuit should have only output
-  bool output(std::string nid, unit::pin& pin)
-  { for (unit& u : units)
-    { for (unit::pin& p : u.o)
-      { if (p.nid == nid) { pin = p; return true; } } }
-
-    return false; }
-  // <---
-};
-// <---
-
 // ---> handler
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
-  { context.del(ROOT/"simulation params");
-    std::string header; std::string source;
+  { std::string header; std::string source;
     std::string tmp = context[ROOT/"circuit file path"];
     std::string fname;
     for (char c : tmp) { if (c == '.') { break; } fname.push_back(c); }
     std::string header_name = fname; header_name.append(".h");
     std::string source_name = fname; source_name.append(".c");
-    context[ROOT/"simulation params"/"name"] = fname;
 
     // ---> header
     print(header, "#ifndef %s_h\n", fname.c_str());
@@ -170,7 +43,6 @@ void generator::handler(void* ctx, IM mess)
             counter);
       counter++; }
     print(header, "#define %s_inputs_size %d\n", fname.c_str(), counter);
-    context[ROOT/"simulation params"/"inputs size"] = (int)counter;
 
     counter = 0;
     print(header, "\n// outputs\n");
@@ -181,7 +53,6 @@ void generator::handler(void* ctx, IM mess)
             counter);
       counter++; }
     print(header, "#define %s_outputs_size %d\n", fname.c_str(), counter);
-    context[ROOT/"simulation params"/"outputs size"] = (int)counter;
 
     print(header, "\n// context\n");
     unsigned int context_size = 0;
@@ -211,25 +82,6 @@ void generator::handler(void* ctx, IM mess)
         context_size += num_count;
         context_size += den_count; }
       // <---
-
-      // ---> code block
-      else if (utype == "code block")
-      { unsigned int block_context_size
-          = (int)circuit[ROOT/"units"/unit/"context size"];
-        unsigned int inputs_size
-          = circuit.ls(ROOT/"units"/unit/"inputs").size();
-        unsigned int outputs_size
-          = circuit.ls(ROOT/"units"/unit/"outputs").size();
-        if (block_context_size)
-        { print(header, "#define %s_unit_%s %d\n",
-                fname.c_str(), unit.c_str(), context_size);
-          context_size += inputs_size + outputs_size + block_context_size; }
-        std::string function_name = circuit[ROOT/"units"/unit/"function name"];
-        print(header, "extern void %s(float* inputs, "
-                                "float* outputs, "
-                                "float* context);\n",
-              function_name.c_str()); }
-      // <---
       
       // ---> loopback
       else if (utype == "loopback")
@@ -249,7 +101,6 @@ void generator::handler(void* ctx, IM mess)
       context_size++; }
 
     print(header, "#define %s_context_size %d\n", fname.c_str(), context_size);
-    context[ROOT/"simulation params"/"context size"] = (int)context_size;
 
     print(header, "\nvoid %s(float* inputs,"
                   " float* outputs, float* context);\n", fname.c_str());
@@ -263,13 +114,6 @@ void generator::handler(void* ctx, IM mess)
 
     // ---> source
     print(source, "#include \"%s.h\"\n", fname.c_str());
-    for (std::string unit : circuit.ls(ROOT/"units"))
-    { if (circuit[ROOT/"units"/unit/"type"] == "code block")
-      { std::string fname = circuit[ROOT/"units"/unit/"function name"];
-        print(source,
-              "extern void %s"
-              "(float* inputs, float* outputs, float* context);\n",
-              fname.c_str()); } }
 
     print(source, "\nvoid %s(float* inputs, "
                   " float* outputs, float* context) {\n", fname.c_str());
@@ -462,36 +306,6 @@ void generator::handler(void* ctx, IM mess)
         }
         // <---
 
-        // ---> code block
-        else if (unit_type == "code block")
-        { unsigned int inputs_size
-            = circuit.ls(ROOT/"units"/id/"inputs").size();
-          unsigned int outputs_size
-            = circuit.ls(ROOT/"units"/id/"outputs").size();
-          unsigned int counter = 0;
-          for (std::string input : circuit.ls(ROOT/"units"/id/"inputs"))
-          { std::string inid = circuit[ROOT/"units"/id/"inputs"/input/"net"];
-            print(source, "  context[%s_unit_%s + %d] = context[%s_net_%s];\n",
-                  fname.c_str(), id.c_str(), counter,
-                  fname.c_str(), inid.c_str());
-            counter++; }
-          std::string function_name = circuit[ROOT/"units"/id/"function name"];
-          print(source, "  %s(&context[%s_unit_%s + %d], "
-                             "&context[%s_unit_%s + %d], "
-                             "&context[%s_unit_%s + %d]);\n",
-                function_name.c_str(),
-                fname.c_str(), id.c_str(), 0,
-                fname.c_str(), id.c_str(), inputs_size,
-                fname.c_str(), id.c_str(), inputs_size + outputs_size);
-          counter = 0;
-          for (std::string output : circuit.ls(ROOT/"units"/id/"outputs"))
-          { std::string onid = circuit[ROOT/"units"/id/"outputs"/output/"net"];
-            print(source, "  context[%s_net_%s] = context[%s_unit_%s + %d];\n",
-                  fname.c_str(), onid.c_str(), fname.c_str(), id.c_str(),
-                  inputs_size + counter);
-            counter++; } }
-        // <---
-        
         // ---> loopback
         else if (unit_type == "loopback")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];

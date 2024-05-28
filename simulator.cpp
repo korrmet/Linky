@@ -1,15 +1,5 @@
 #include "simulator.hpp"
-#include "app.hpp"
 #include <cmath>
-#include <cstdlib>
-
-#ifdef LINUX
-#include <dlfcn.h>
-#endif
-
-#ifdef WINDOWS
-#include <windows.h>
-#endif
 
 #define GREEN 0x00AC0000
 #define BLUE  0x0000B400
@@ -36,6 +26,115 @@ inline void print(std::string& s, const char* fmt, ...)
   va_end(args);
   tmp.pop_back();
   s.append(tmp); }
+// <---
+
+// ---> simulation runtime
+class runtime
+{ public:
+
+  // all of these instructions are written according to the generator and
+  // repeats the code's behavior as close as possible
+  struct instruction
+  { enum
+    { itoc,  // input to context
+      ctoo,  // context to output
+      ftoc,  // float to context
+      stoc,  // sum to context
+      dtoc,  // diff to context
+      ptoc,  // product to context
+      dtoc2, // division to context
+      ktoc,  // add context with coefficient to context
+      ktoc2, // substract context with coefficient from context
+      dbyf,  // context divide by float
+      ktoc3, // assign context with coefficient to context
+      ctoc,  // assign comparsion with null to context
+      ctoc2, // substract comparsion with null from context
+      ctoc3, // assign comparsion with float to context
+      ctoc4, // add comparsion with float to context
+      ctoc5, // assign inverse comparsion with float to context
+      ctoc6, // add inverse comparsion with float to context
+    } type;
+    
+    unsigned int lidx;
+    unsigned int ridx;
+    unsigned int ridx2;
+    float        rval;
+  };
+
+  std::list<instruction> instructions;
+  
+  struct pair { unsigned int k; unsigned int v; };
+
+  std::list<pair> units;
+  std::list<pair> inputs;
+  std::list<pair> outputs;
+  std::list<pair> nets;
+
+  unsigned int unit(unsigned int k)
+  { for (pair& p : units) { if (p.k == k) { return p.v; } } return 0; }
+
+  unsigned int input(unsigned int k)
+  { for (pair& p : inputs) { if (p.k == k) { return p.v; } } return 0; }
+
+  unsigned int output(unsigned int k)
+  { for (pair& p : outputs) { if (p.k == k) { return p.v; } } return 0; }
+  
+  unsigned int net(unsigned int k)
+  { for (pair& p : nets) { if (p.k == k) { return p.v; } } return 0; }
+
+  void unit(unsigned int k, unsigned int v)
+  { pair p = { .k = k, .v = v }; units.push_back(p); }
+
+  void input(unsigned int k, unsigned int v)
+  { pair p = { .k = k, .v = v }; inputs.push_back(p); }
+
+  void output(unsigned int k, unsigned int v)
+  { pair p = { .k = k, .v = v }; outputs.push_back(p); }
+
+  void net(unsigned int k, unsigned int v)
+  { pair p = { .k = k, .v = v }; nets.push_back(p); }
+
+  void exec(float* inputs, float* outputs, float* context)
+  { for (instruction& i : instructions)
+    { switch (i.type)
+      { case instruction::itoc:
+             context[i.lidx] = inputs[i.ridx]; break;
+        case instruction::ctoo:
+             outputs[i.lidx] = context[i.ridx]; break;
+        case instruction::ftoc:
+             context[i.lidx] = i.rval; break;
+        case instruction::stoc:
+             context[i.lidx] = context[i.ridx] + context[i.ridx2]; break;
+        case instruction::dtoc:
+             context[i.lidx] = context[i.ridx] - context[i.ridx2]; break;
+        case instruction::ptoc:
+             context[i.lidx] = context[i.ridx] * context[i.ridx2]; break;
+        case instruction::dtoc2:
+             context[i.lidx] = context[i.ridx] / context[i.ridx2]; break;
+        case instruction::ktoc:
+             context[i.lidx] += i.rval * context[i.ridx]; break;
+        case instruction::ktoc2:
+             context[i.lidx] -= i.rval * context[i.ridx]; break;
+        case instruction::dbyf:
+             context[i.lidx] /= i.rval; break;
+        case instruction::ktoc3:
+             context[i.lidx] = i.rval * context[i.ridx]; break;
+        case instruction::ctoc:
+             context[i.lidx] = context[i.ridx] * (context[i.ridx2] > 0); break;
+        case instruction::ctoc2:
+             context[i.lidx] -= context[i.ridx] * (context[i.ridx2] < 0); break;
+        case instruction::ctoc3:
+             context[i.lidx]
+               = context[i.ridx] * (context[i.ridx2] >= i.rval); break;
+        case instruction::ctoc4:
+             context[i.lidx]
+               += context[i.ridx] * (context[i.ridx2] < i.rval); break;
+        case instruction::ctoc5:
+             context[i.lidx]
+               = context[i.ridx] * (context[i.ridx2] <= i.rval); break;
+        case instruction::ctoc6:
+             context[i.lidx]
+               += context[i.ridx] * (context[i.ridx2] > i.rval); break; } } } };
 // <---
 
 class simulation_database
@@ -154,12 +253,7 @@ void simulator::chart::draw()
   { if (l.points.size() == 0) { continue; } // empty line, skip it
     fl_color(Fl_Color(l.color));
     for (unsigned int i = 0; i < l.points.size() - 1; i++)
-    { // TODO: make it as option
-      // fl_line(x_screen(l.points[i    ].x),
-      //         y_screen(l.points[i    ].y),
-      //         x_screen(l.points[i + 1].x),
-      //         y_screen(l.points[i + 1].y));
-      fl_line(x_screen(l.points[i    ].x),
+    { fl_line(x_screen(l.points[i    ].x),
               y_screen(l.points[i    ].y),
               x_screen(l.points[i + 1].x),
               y_screen(l.points[i    ].y));
@@ -206,12 +300,11 @@ int simulator::chart::y_screen(float y_real)
 // <---
 
 // ---> simulator window constructor
-simulator::window::window(struct simulator::params sim_params)
+simulator::window::window()
 : Fl_Window(640, 480, "Simulator"),
   ch(0, 0, 640, 320),
   params(5, 325, 630, 125),
   run_btn(575, 455, 60, 20, "Run"),
-  sim_params(sim_params),
   x_max(0), x_min(0), y_max(0), y_min(0), endpoint(0), Ts(0)
 { size_range(640, 480); params.buffer(&buf); set_modal(); show();
   run_btn.callback(run_btn_cb, this); }
@@ -253,8 +346,9 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
 
   // ---> preparing simulation database
   simulation_database sim_base((that->endpoint / that->Ts) + 1);
-  for (std::string item : that->sim_params.inputs ) { sim_base.i(item); }
-  for (std::string item : that->sim_params.outputs) { sim_base.o(item); }
+  // TODO: get the inputs and outputs from the context[ROOT/"simulation params"]
+  // for (std::string item : that->sim_params.inputs ) { sim_base.i(item); }
+  // for (std::string item : that->sim_params.outputs) { sim_base.o(item); }
   // <---
 
   // ---> fill database with the input signals
@@ -273,69 +367,16 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
       else if (s.type == "meander")
       { y = meander(s.delay, s.period, s.ratio, s.v_min, s.v_max, x); }
       else if (s.type == "sawtooth")
-      { y = sawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
+      { y= sawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
       else if (s.type == "rsawtooth")
       { y = rsawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
 
       sim_base.i(s.input_name).values[i] = y; } }
   // <---
 
-  // ---> compiling the sources to the shared library for simulation core
-  std::string compile_code;
-  print(compile_code, "%s ",
-        ((std::string)::params[ROOT/"compiler path"]).c_str());
-  for (std::string sfile : that->sim_params.source_files)
-  { print(compile_code, "%s ", sfile.c_str()); }
-  print(compile_code, "-o sim.so -fPIC -shared",
-        that->sim_params.circuit_name.c_str());
-  if (std::system(compile_code.c_str()) != 0) { return; }
-  // <---
+  // TODO: fill simulation runtime commands, repeat it from the code generator
 
-  // ---> loading compiled library
-#ifdef LINUX
-  void* sim_handle = dlopen("./sim.so", RTLD_LAZY);
-  void (*sim_func)(float* inputs, float* ouputs, float* context)
-    = (void (*)(float*, float*, float*))
-      dlsym(sim_handle, that->sim_params.circuit_name.c_str());
-#endif
-
-#ifdef WINDOWS
-#endif
-  // <---
-
-  // ---> run the simulation using signals values
-  float i_array[that->sim_params.inputs.size()];
-  for (unsigned int i = 0; i < that->sim_params.inputs.size(); i++)
-  { i_array[i] = 0; }
-
-  float o_array[that->sim_params.outputs.size()];
-  for (unsigned int i = 0; i < that->sim_params.outputs.size(); i++)
-  { o_array[i] = 0; }
-
-  float c_array[that->sim_params.context_size];
-  for (unsigned int i = 0; i < that->sim_params.context_size; i++)
-  { c_array[i] = 0; }
-
-  for (unsigned int i = 0; i < sim_base.size(); i++)
-  { unsigned int ctr = 0;
-    // copy all i-th values of inputs from the simulation database
-    for (std::string input : that->sim_params.inputs)
-    { i_array[ctr] = sim_base.i(input).values[i]; ctr++; }
-    
-    // run the code
-#ifdef LINUX
-    sim_func(i_array, o_array, c_array);
-#endif
-
-#ifdef WINDOWS
-#endif
-    
-    // copy all of the output values to the i-th outputs from the simulation
-    // database
-    ctr = 0;
-    for (std::string output : that->sim_params.outputs)
-    { sim_base.o(output).values[i] = o_array[ctr]; ctr++; } }
-  // <---
+  // TODO: run the runtime as was in previous commit
 
   // ---> push the simulation data to the chart
   for (line& l : that->lines)
