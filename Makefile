@@ -22,8 +22,8 @@ endif
 COMPILE_FLAGS += -DVERSION="\"v0.1 alpha\""
 COMPILE_FLAGS += -I./Independency
 
-linky: app.o editor.o generator.o simulator.o circuit_calculator.o
-	$(CXX) app.o editor.o generator.o simulator.o circuit_calculator.o -o linky $(LINK_FLAGS)
+linky: app.o editor.o generator.o simulator.o solver.o
+	$(CXX) app.o editor.o generator.o simulator.o solver.o -o linky $(LINK_FLAGS)
 
 run: linky
 	./linky
@@ -42,8 +42,8 @@ generator.o: generator.cpp generator.hpp
 simulator.o: simulator.cpp simulator.hpp
 	$(CXX) -c simulator.cpp -o simulator.o $(COMPILE_FLAGS)
 
-circuit_calculator.o: circuit_calculator.cpp circuit_calculator.hpp
-	$(CXX) -c circuit_calculator.cpp -o circuit_calculator.o $(COMPILE_FLAGS)
+solver.o: solver.cpp solver.hpp
+	$(CXX) -c solver.cpp -o solver.o $(COMPILE_FLAGS)
 
 app.cpp:
 app.hpp:
@@ -53,8 +53,8 @@ generator.cpp:
 generator.hpp:
 simulator.cpp:
 simulator.hpp:
-circuit_calculator.cpp:
-circuit_calculator.hpp:
+solver.cpp:
+solver.hpp:
 
 clean:
 	rm -rf linky linky.exe *.o examples/*.h examples/*.c examples/*.so

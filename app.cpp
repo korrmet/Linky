@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "editor.hpp"
 #include "generator.hpp"
+#include "solver.hpp"
 #include "independency.hpp"
 #include <FL/Fl.H>
 #include <fstream>
@@ -20,6 +21,7 @@ void handler(void* ctx, IM mess);
 int main(int argc, char** argv)
 { bus + app::handler;
   bus + generator::handler;
+  bus + solver::handler;
   
   if (argc > 1) { bus(IM("file open") << iv("path", argv[1])); }
   if (argc > 2 && std::string("--generate") == argv[2])

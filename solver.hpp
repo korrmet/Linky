@@ -1,9 +1,18 @@
-#ifndef CIRCUIT_CALCULATOR_HPP
-#define CIRCUIT_CALCULATOR_HPP
+#ifndef SOLVER_HPP
+#define SOLVER_HPP
+
+#include "app.hpp"
+
+namespace solver {
+
+void handler(void* ctx, IM mess);
+
+}
 
 #include <string>
 #include <list>
 
+// ---> circuit calculator
 class circuit_calculator
 { public:
 
@@ -52,5 +61,6 @@ class circuit_calculator
 
   bool inputs(std::string nid, std::list<unit::pin*> pins);
   bool output(std::string nid, unit::pin& pin); };
+// <--- circuit calculator
 
-#endif // CIRCUIT_CALCULATOR_HPP
+#endif // SOLVER_HPP
