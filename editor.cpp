@@ -1435,7 +1435,8 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
     if (context.ls(ROOT/"network errors").size() ||
         context.ls(ROOT/"sequence errors").size()) { fail = true; }
     if (!fail)
-    { bus(IM("generate code"));
+    { bus(IM("solve"));
+      bus(IM("generate code"));
       bus(IM("screen update")); } }
 
   else if (cmd == "check circuit errors") { bus(IM("check circuit errors"));

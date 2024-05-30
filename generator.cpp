@@ -23,6 +23,217 @@ inline void print(std::string& s, const char* fmt, ...)
 void generator::handler(void* ctx, IM mess)
 { // ---> generate code
   if (mess == "generate code")
+  { if (!context(ROOT/"solution")) { return; }
+
+    std::string header; std::string source;
+    std::string tmp = context[ROOT/"circuit file path"];
+    std::string fname;
+
+    for (char c : tmp)
+    { if (c == '.') { break; }
+      if (c == '/') { fname.clear(); }
+      fname.push_back(c); }
+    
+    std::string header_name = fname; header_name.append(".h");
+    std::string source_name = fname; source_name.append(".c");
+
+    // ---> header
+    print(header, "#ifndef %s_h\n", fname.c_str());
+    print(header, "#define %s_h\n\n", fname.c_str());
+
+    for (std::string iid : context.ls(ROOT/"solution"/"inputs"))
+    { std::string iname = circuit[ROOT/"inputs"/iid/"name"];
+      int num = context[ROOT/"inputs"/iid];
+      print(header, "#define %s_i_%s %d\n",
+            fname.c_str(), iname.c_str(), num); }
+
+    print(header, "\n");
+    for (std::string oid : context.ls(ROOT/"solution"/"outputs"))
+    { std::string oname = circuit[ROOT/"outputs"/oid/"name"];
+      int num = context[ROOT/"outputs"/oid];
+      print(header, "#define %s_o_%s %d\n",
+            fname.c_str(), oname.c_str(), num); }
+
+    print(header, "\n");
+    print(header, "#define %s_inputs_size %d\n",
+          fname.c_str(), (int)context[ROOT/"solution"/"inputs num"]);
+    print(header, "#define %s_outputs_size %d\n",
+          fname.c_str(), (int)context[ROOT/"solution"/"outputs num"]);
+    print(header, "#define %s_context_size %d\n",
+          fname.c_str(), (int)context[ROOT/"solution"/"context num"]);
+
+    print(header, "\n");
+    print(header, "void %s(float* i, float* o, float* ctx);\n", fname.c_str());
+
+    print(header, "\n#endif\n");
+    std::ofstream header_file(header_name);
+    if (!header_file.is_open()) { PRINT("Can't write generated header!\n"); }
+    else { header_file << header; header_file.close(); }
+    // <--- header
+    
+    // ---> source
+    print(source, "#include \"%s.h\"\n\n", fname.c_str());
+    print(source, "void %s(float* i, float* o, float* ctx)\n", fname.c_str());
+    print(source, "{\n");
+
+    for (std::string step : context.ls(ROOT/"solution"/"sequence"))
+    { std::string cmd = context[ROOT/"solution"/"sequence"/step/"cmd"];
+
+      if (cmd == "net = input")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int input = context[ROOT/"solution"/"sequence"/step/"input"];
+        print(source, "  ctx[%d] = i[%d];\n", net, input); }
+
+      else if (cmd == "output = net")
+      { int output = context[ROOT/"solution"/"sequence"/step/"output"];
+        int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        print(source, "  o[%d] = ctx[%d];\n", output, net); }
+      
+      else if (cmd == "net = value")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        float value = context[ROOT/"solution"/"sequence"/step/"value"];
+        print(source, "  ctx[%d] = %f;\n", net, value); }
+      
+      else if (cmd == "net = net1 + net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] + ctx[%d];\n",
+              net, net1, net2); }
+      
+      else if (cmd == "net = net1 - net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] - ctx[%d];\n",
+              net, net1, net2); }
+      
+      else if (cmd == "net = net1 * net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] * ctx[%d];\n",
+              net, net1, net2); }
+      
+      else if (cmd == "net = net1 / net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] * ctx[%d];\n",
+              net, net1, net2); }
+      
+      else if (cmd == "net = unit[num]")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        print(source, "  ctx[%d] = ctx[%d];\n", net, unit_num); }
+      
+      else if (cmd == "unit[num1] = unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        print(source, "  ctx[%d] = ctx[%d];\n", unit_num1, unit_num2); }
+      
+      else if (cmd == "unit[num] = net")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        print(source, "  ctx[%d] = ctx[%d];\n", unit_num, net); }
+      
+      else if (cmd == "unit[num] = val")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] = %f;\n", unit_num, val); }
+      
+      else if (cmd == "unit[num1] += val * unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] += %f * ctx[%d];\n",
+              unit_num1, val, unit_num2); }
+      
+      else if (cmd == "unit[num1] -= val * unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        float val = 0;
+        print(source, "  ctx[%d] -= %f * ctx[%d];\n",
+              unit_num1, val, unit_num2); }
+      
+      else if (cmd == "unit[num] /= val")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] /= %f;\n", unit_num, val); }
+      
+      else if (cmd == "net1 = net2")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d];\n", net1, net2); }
+      
+      else if (cmd == "net1 = val * net2")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] = %f * ctx[%d];\n", net1, val, net2); }
+      
+      else if (cmd == "net1 = net2 * (net2 > 0)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] * (ctx[%d] > 0);\n",
+              net1, net2, net2); }
+      
+      else if (cmd == "net1 -= net2 * (net2 < 0)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] -= ctx[%d] * (ctx[%d] < 0);\n",
+              net1, net2, net2); }
+      
+      else if (cmd == "net1 = val * (net2 >= val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] = %f * (ctx[%d] >= %f);\n",
+              net1, val, net2, val); }
+      
+      else if (cmd == "net1 += net2 * (net2 < val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] += ctx[%d] * (ctx[%d] < %f);\n",
+              net1, net2, net2, val); }
+      
+      else if (cmd == "net1 = val * (net2 <= val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] = %f * (ctx[%d] <= %f);\n",
+              net1, val, net2, val); }
+      
+      else if (cmd == "net1 += net2 * (net2 > val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        print(source, "  ctx[%d] += ctx[%d] * (ctx[%d] > %f);\n",
+              net1, net2, net2, val); }
+    }
+
+    print(source, "}\n");
+
+    std::ofstream source_file(source_name);
+    if (!source_file.is_open()) { PRINT("Can't write generated source!\n"); }
+    else { source_file << source; source_file.close(); }
+    // <--- source
+  }
+  // <--- generate code
+  
+  // ---> generate code
+  if (mess == "_generate code")
   { std::string header; std::string source;
     std::string tmp = context[ROOT/"circuit file path"];
     std::string fname;

@@ -1,7 +1,7 @@
 #include "solver.hpp"
 
 void solver::handler(void* ctx, IM mess)
-{
+{ // ---> solve
   if (mess == "solve")
   { context.del(ROOT/"solution");
 
@@ -9,11 +9,13 @@ void solver::handler(void* ctx, IM mess)
     for (std::string input : circuit.ls(ROOT/"inputs"))
     { context[ROOT/"solution"/"inputs"/input] = (int)inputs_counter;
       inputs_counter++; }
+    context[ROOT/"solution"/"inputs num"] = (int)inputs_counter;
 
     unsigned int outputs_counter = 0;
     for (std::string output : circuit.ls(ROOT/"outputs"))
     { context[ROOT/"solution"/"outputs"/output] = (int)outputs_counter;
       outputs_counter++; }
+    context[ROOT/"solution"/"outputs num"] = (int)outputs_counter;
 
     unsigned int context_counter = 0;
     for (std::string unit : circuit.ls(ROOT/"units"))
@@ -42,6 +44,8 @@ void solver::handler(void* ctx, IM mess)
     { context[ROOT/"solution"/"network"/net] = (int)context_counter;
       context_counter++; }
 
+    context[ROOT/"solution"/"context num"] = (int)context_counter;
+
     unsigned int step_counter = 0;
     for (std::string step : context.ls(ROOT/"sequence"))
     { std::string type = context[ROOT/"sequence"/step/"type"];
@@ -49,18 +53,20 @@ void solver::handler(void* ctx, IM mess)
 
       if (type == "input")
       { std::string nid = circuit[ROOT/"inputs"/id/"net"];
-        std::string iname = circuit[ROOT/"inputs"/id/"name"];
-        context[ROOT/"sequence"/step_counter/"cmd"] = "net = input";
-        context[ROOT/"sequence"/step_counter/"net"] = nid;
-        context[ROOT/"sequence"/step_counter/"input"] = iname;
+        int net = context[ROOT/"solution"/"network"/nid];
+        int input = std::stoi(id);
+        context[ROOT/"solution"/"sequence"/step_counter/"cmd"] = "net = input";
+        context[ROOT/"solution"/"sequence"/step_counter/"net"] = net;
+        context[ROOT/"solution"/"sequence"/step_counter/"input"] = input;
         step_counter++; }
 
       else if (type == "output")
       { std::string nid = circuit[ROOT/"outputs"/id/"net"];
-        std::string oname = circuit[ROOT/"outputs"/id/"name"];
-        context[ROOT/"sequence"/step_counter/"cmd"] = "output = net";
-        context[ROOT/"sequence"/step_counter/"net"] = nid;
-        context[ROOT/"sequence"/step_counter/"output"] = oname;
+        int net = context[ROOT/"solution"/"network"/nid];
+        int output = std::stoi(id);
+        context[ROOT/"solution"/"sequence"/step_counter/"cmd"] = "output = net";
+        context[ROOT/"solution"/"sequence"/step_counter/"net"] = net;
+        context[ROOT/"solution"/"sequence"/step_counter/"output"] = output;
         step_counter++; }
 
       else if (type == "unit")
@@ -68,74 +74,107 @@ void solver::handler(void* ctx, IM mess)
 
         if (utype == "constant")
         { std::string nid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          int net = context[ROOT/"solution"/"network"/nid];
           float value = circuit[ROOT/"units"/id/"value"];
-          context[ROOT/"sequence"/step_counter/"cmd"] = "net = value";
-          context[ROOT/"sequence"/step_counter/"net"] = nid;
-          context[ROOT/"sequence"/step_counter/"value"] = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = value";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"] = net;
+          context[ROOT/"solution"/"sequence"/step_counter/"value"] = value;
           step_counter++; }
 
         else if (utype == "sum")
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net = net1 + net2";
-          context[ROOT/"sequence"/step_counter/"net"]  = onid;
-          context[ROOT/"sequence"/step_counter/"net1"] = i0nid;
-          context[ROOT/"sequence"/step_counter/"net2"] = i1nid;
+          int net = context[ROOT/"solution"/"network"/onid];
+          int net1 = context[ROOT/"solution"/"network"/i0nid];
+          int net2 = context[ROOT/"solution"/"network"/i1nid];
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = net1 + net2";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"]  = net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = net1;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = net2;
           step_counter++; }
 
         else if (utype == "difference")
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net = net1 - net2";
-          context[ROOT/"sequence"/step_counter/"net"]  = onid;
-          context[ROOT/"sequence"/step_counter/"net1"] = i0nid;
-          context[ROOT/"sequence"/step_counter/"net2"] = i1nid;
+          int net = context[ROOT/"solution"/"network"/onid];
+          int net1 = context[ROOT/"solution"/"network"/i0nid];
+          int net2 = context[ROOT/"solution"/"network"/i1nid];
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = net1 - net2";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"]  = net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = net1;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = net2;
           step_counter++; }
 
         else if (utype == "product")
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net = net1 * net2";
-          context[ROOT/"sequence"/step_counter/"net"]  = onid;
-          context[ROOT/"sequence"/step_counter/"net1"] = i0nid;
-          context[ROOT/"sequence"/step_counter/"net2"] = i1nid;
+          int net = context[ROOT/"solution"/"network"/onid];
+          int net1 = context[ROOT/"solution"/"network"/i0nid];
+          int net2 = context[ROOT/"solution"/"network"/i1nid];
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = net1 * net2";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"]  = net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = net1;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = net2;
           step_counter++; }
 
         else if (utype == "division")
         { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net = net1 / net2";
-          context[ROOT/"sequence"/step_counter/"net"]  = onid;
-          context[ROOT/"sequence"/step_counter/"net1"] = i0nid;
-          context[ROOT/"sequence"/step_counter/"net2"] = i1nid;
+          int net = context[ROOT/"solution"/"network"/onid];
+          int net1 = context[ROOT/"solution"/"network"/i0nid];
+          int net2 = context[ROOT/"solution"/"network"/i1nid];
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = net1 / net2";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"]  = net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = net1;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = net2;
           step_counter++; }
 
         else if (utype == "delay")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
           int value = circuit[ROOT/"units"/id/"value"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
+          int unit = context[ROOT/"solution"/"units"/id];
 
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net = unit[num]";
-          context[ROOT/"sequence"/step_counter/"net"]  = onid;
-          context[ROOT/"sequence"/step_counter/"unit"] = id;
-          context[ROOT/"sequence"/step_counter/"num"]  = value - 1;
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = unit[num]";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"]  = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+          context[ROOT/"solution"/"sequence"/step_counter/"num"]  = value - 1;
           step_counter++;
 
           for (unsigned int i = value - 1; i > 0; i--)
-          { context[ROOT/"sequence"/step_counter/"cmd"]
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num1] = unit[num2]";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num1"] = (int)i;
-            context[ROOT/"sequence"/step_counter/"num2"] = (int)i - 1;
-            step_counter++; } }
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num1"] = (int)i;
+            context[ROOT/"solution"/"sequence"/step_counter/"num2"]
+            = (int)i - 1;
+            step_counter++; }
+
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "unit[num] = net";
+          context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+          context[ROOT/"solution"/"sequence"/step_counter/"num"] = 0;
+          context[ROOT/"solution"/"sequence"/step_counter/"net"] = inet;
+          step_counter++; }
 
         else if (utype == "function")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
+          int unit = context[ROOT/"solution"/"units"/id];
           std::string num_poly = circuit[ROOT/"units"/id/"numerator poly"];
           std::string den_poly = circuit[ROOT/"units"/id/"denominator poly"];
           int num_count = 0;
@@ -157,168 +196,197 @@ void solver::handler(void* ctx, IM mess)
 
           // manage numerator delays
           for (int i = 0; i < num_count - 1; i++)
-          { context[ROOT/"sequence"/step_counter/"cmd"]
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num1] = unit[num2]";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num1"] = i;
-            context[ROOT/"sequence"/step_counter/"num2"] = i + 1;
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num1"] = i;
+            context[ROOT/"solution"/"sequence"/step_counter/"num2"] = i + 1;
             step_counter++;
 
-            context[ROOT/"sequence"/step_counter/"cmd"]  = "unit[num] = net";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num"]  = num_count - 1;
-            context[ROOT/"sequence"/step_counter/"net"]  = inid;
+            context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+            = "unit[num] = net";
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num"]
+            = num_count - 1;
+            context[ROOT/"solution"/"sequence"/step_counter/"net"]  = inet;
             step_counter++; }
 
           // manage denominator delays
           for (int i = 0; i < den_count - 1; i++)
-          { context[ROOT/"sequence"/step_counter/"cmd"]
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num1] = unit[num2]";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num1"] = num_count + i;
-            context[ROOT/"sequence"/step_counter/"num2"] = num_count + i + 1;
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num1"]
+            = num_count + i;
+            context[ROOT/"solution"/"sequence"/step_counter/"num2"]
+            = num_count + i + 1;
             step_counter++; }
 
           // calculate output
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "unit[num] = val";
-          context[ROOT/"sequence"/step_counter/"unit"] = id;
-          context[ROOT/"sequence"/step_counter/"num"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "unit[num] = val";
+          context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+          context[ROOT/"solution"/"sequence"/step_counter/"num"]
           = num_count + den_count - 1;
-          context[ROOT/"sequence"/step_counter/"val"] = 0.0f;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"] = 0.0f;
           step_counter++;
 
           // numerator_sum
           for (int i = 0; i < num_count; i++)
-          { context[ROOT/"sequence"/step_counter/"cmd"]
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num1] += val * unit[num2]";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num1"]
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num1"]
             = num_count + den_count - 1;
-            context[ROOT/"sequence"/step_counter/"num2"] = num_count - 1 - i;
-            context[ROOT/"sequence"/step_counter/"val"]  = num_coeffs[i];
+            context[ROOT/"solution"/"sequence"/step_counter/"num2"]
+            = num_count - 1 - i;
+            context[ROOT/"solution"/"sequence"/step_counter/"val"]
+            = num_coeffs[i];
             step_counter++; }
 
           // denominator sum
-          for (int i = 0; i < den_count; i++)
-          { context[ROOT/"sequence"/step_counter/"cmd"]
+          for (int i = 1; i < den_count; i++)
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num1] -= val * unit[num2]";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num1"]
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num1"]
             = num_count + den_count - 1;
-            context[ROOT/"sequence"/step_counter/"num2"]
+            context[ROOT/"solution"/"sequence"/step_counter/"num2"]
             = num_count + den_count - 1 - i;
-            context[ROOT/"sequence"/step_counter/"val"] = den_coeffs[i];
+            context[ROOT/"solution"/"sequence"/step_counter/"val"]
+            = den_coeffs[i];
             step_counter++; }
 
           // finalizing last Y
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "unit[num] /= val";
-          context[ROOT/"sequence"/step_counter/"unit"] = id;
-          context[ROOT/"sequence"/step_counter/"num"] 
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "unit[num] /= val";
+          context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+          context[ROOT/"solution"/"sequence"/step_counter/"num"] 
           = num_count + den_count - 1;
-          context[ROOT/"sequence"/step_counter/"val"] = den_coeffs[0];
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]
+          = den_coeffs[0];
           step_counter++;
 
           // setting output
-          context[ROOT/"sequence"/step_counter/"cmd"] = "net = unit[num]";
-          context[ROOT/"sequence"/step_counter/"net"] = onid;
-          context[ROOT/"sequence"/step_counter/"unit"] = id;
-          context[ROOT/"sequence"/step_counter/"num"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net = unit[num]";
+          context[ROOT/"solution"/"sequence"/step_counter/"net"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+          context[ROOT/"solution"/"sequence"/step_counter/"num"]
           = num_count + den_count - 1;
           step_counter++; }
 
         else if (utype == "loopback")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
+          int unit = context[ROOT/"solution"/"units"/id];
           int value = circuit[ROOT/"units"/id/"value"];
           if (value == 1)
-          { context[ROOT/"sequence"/step_counter/"cmd"] = "net1 = net2";
-            context[ROOT/"sequence"/step_counter/"net1"] = onid;
-            context[ROOT/"sequence"/step_counter/"net2"] = inid;
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+            = "net1 = net2";
+            context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+            context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
             step_counter++; }
           else
-          { context[ROOT/"sequence"/step_counter/"cmd"] = "net = unit[num]";
-            context[ROOT/"sequence"/step_counter/"net"] = onid;
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"num"] = value - 2;
+          { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+            = "net = unit[num]";
+            context[ROOT/"solution"/"sequence"/step_counter/"net"] = onet;
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num"] = value - 2;
             step_counter++;
 
             for (unsigned int i = value - 2; i > 0; i--)
-            { context[ROOT/"sequence"/step_counter/"cmd"]
+            { context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
               = "unit[num1] = unit[num2]"; 
-              context[ROOT/"sequence"/step_counter/"unit"] = id;
-              context[ROOT/"sequence"/step_counter/"num1"] = (int)i;
-              context[ROOT/"sequence"/step_counter/"num2"] = (int)i - 1;
+              context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+              context[ROOT/"solution"/"sequence"/step_counter/"num1"] = (int)i;
+              context[ROOT/"solution"/"sequence"/step_counter/"num2"]
+              = (int)i - 1;
               step_counter++; }
 
-            context[ROOT/"sequence"/step_counter/"cmd"]  = "unit = net";
-            context[ROOT/"sequence"/step_counter/"unit"] = id;
-            context[ROOT/"sequence"/step_counter/"net"]  = inid;
+            context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+            = "unit[num] = net";
+            context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
+            context[ROOT/"solution"/"sequence"/step_counter/"num"]  = 0;
+            context[ROOT/"solution"/"sequence"/step_counter/"net"]  = inet;
             step_counter++; } }
 
         else if (utype == "coeff")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
           float value = circuit[ROOT/"units"/id/"value"];
 
-          context[ROOT/"sequence"/step_counter/"cmd"]  = "net1 = val * net2";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
-          context[ROOT/"sequence"/step_counter/"val"]  = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 = val * net2";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
           step_counter++; }
 
         else if (utype == "abs")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
           = "net1 = net2 * (net2 > 0)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
           step_counter++;
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
           = "net1 -= net2 * (net2 < 0)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
           step_counter++; }
 
         else if (utype == "limit max")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
           float value = circuit[ROOT/"units"/id/"value"];
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
           = "net1 = val * (net2 >= val)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
-          context[ROOT/"sequence"/step_counter/"val"]  = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
           step_counter++;
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
           = "net1 += net2 * (net2 < val)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
-          context[ROOT/"sequence"/step_counter/"val"]  = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
           step_counter++; }
 
         else if (utype == "limit min")
         { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
           std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
           float value = circuit[ROOT/"units"/id/"value"];
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
           = "net1 = val * (net2 <= val)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
-          context[ROOT/"sequence"/step_counter/"val"]  = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
           step_counter++;
 
-          context[ROOT/"sequence"/step_counter/"cmd"]
-          = "net1 = net2 * (net2 > val)";
-          context[ROOT/"sequence"/step_counter/"net1"] = onid;
-          context[ROOT/"sequence"/step_counter/"net2"] = inid;
-          context[ROOT/"sequence"/step_counter/"val"]  = value;
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 += net2 * (net2 > val)";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
           step_counter++; } } } }
+  // <--- solve
 
   // ---> check circuit errors
   else if (mess == "check circuit errors")
