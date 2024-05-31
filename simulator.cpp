@@ -1,4 +1,5 @@
 #include "simulator.hpp"
+#include "app.hpp"
 #include <cmath>
 
 #define GREEN 0x00AC0000
@@ -26,115 +27,6 @@ inline void print(std::string& s, const char* fmt, ...)
   va_end(args);
   tmp.pop_back();
   s.append(tmp); }
-// <---
-
-// ---> simulation runtime
-class runtime
-{ public:
-
-  // all of these instructions are written according to the generator and
-  // repeats the code's behavior as close as possible
-  struct instruction
-  { enum
-    { itoc,  // input to context
-      ctoo,  // context to output
-      ftoc,  // float to context
-      stoc,  // sum to context
-      dtoc,  // diff to context
-      ptoc,  // product to context
-      dtoc2, // division to context
-      ktoc,  // add context with coefficient to context
-      ktoc2, // substract context with coefficient from context
-      dbyf,  // context divide by float
-      ktoc3, // assign context with coefficient to context
-      ctoc,  // assign comparsion with null to context
-      ctoc2, // substract comparsion with null from context
-      ctoc3, // assign comparsion with float to context
-      ctoc4, // add comparsion with float to context
-      ctoc5, // assign inverse comparsion with float to context
-      ctoc6, // add inverse comparsion with float to context
-    } type;
-    
-    unsigned int lidx;
-    unsigned int ridx;
-    unsigned int ridx2;
-    float        rval;
-  };
-
-  std::list<instruction> instructions;
-  
-  struct pair { unsigned int k; unsigned int v; };
-
-  std::list<pair> units;
-  std::list<pair> inputs;
-  std::list<pair> outputs;
-  std::list<pair> nets;
-
-  unsigned int unit(unsigned int k)
-  { for (pair& p : units) { if (p.k == k) { return p.v; } } return 0; }
-
-  unsigned int input(unsigned int k)
-  { for (pair& p : inputs) { if (p.k == k) { return p.v; } } return 0; }
-
-  unsigned int output(unsigned int k)
-  { for (pair& p : outputs) { if (p.k == k) { return p.v; } } return 0; }
-  
-  unsigned int net(unsigned int k)
-  { for (pair& p : nets) { if (p.k == k) { return p.v; } } return 0; }
-
-  void unit(unsigned int k, unsigned int v)
-  { pair p = { .k = k, .v = v }; units.push_back(p); }
-
-  void input(unsigned int k, unsigned int v)
-  { pair p = { .k = k, .v = v }; inputs.push_back(p); }
-
-  void output(unsigned int k, unsigned int v)
-  { pair p = { .k = k, .v = v }; outputs.push_back(p); }
-
-  void net(unsigned int k, unsigned int v)
-  { pair p = { .k = k, .v = v }; nets.push_back(p); }
-
-  void exec(float* inputs, float* outputs, float* context)
-  { for (instruction& i : instructions)
-    { switch (i.type)
-      { case instruction::itoc:
-             context[i.lidx] = inputs[i.ridx]; break;
-        case instruction::ctoo:
-             outputs[i.lidx] = context[i.ridx]; break;
-        case instruction::ftoc:
-             context[i.lidx] = i.rval; break;
-        case instruction::stoc:
-             context[i.lidx] = context[i.ridx] + context[i.ridx2]; break;
-        case instruction::dtoc:
-             context[i.lidx] = context[i.ridx] - context[i.ridx2]; break;
-        case instruction::ptoc:
-             context[i.lidx] = context[i.ridx] * context[i.ridx2]; break;
-        case instruction::dtoc2:
-             context[i.lidx] = context[i.ridx] / context[i.ridx2]; break;
-        case instruction::ktoc:
-             context[i.lidx] += i.rval * context[i.ridx]; break;
-        case instruction::ktoc2:
-             context[i.lidx] -= i.rval * context[i.ridx]; break;
-        case instruction::dbyf:
-             context[i.lidx] /= i.rval; break;
-        case instruction::ktoc3:
-             context[i.lidx] = i.rval * context[i.ridx]; break;
-        case instruction::ctoc:
-             context[i.lidx] = context[i.ridx] * (context[i.ridx2] > 0); break;
-        case instruction::ctoc2:
-             context[i.lidx] -= context[i.ridx] * (context[i.ridx2] < 0); break;
-        case instruction::ctoc3:
-             context[i.lidx]
-               = context[i.ridx] * (context[i.ridx2] >= i.rval); break;
-        case instruction::ctoc4:
-             context[i.lidx]
-               += context[i.ridx] * (context[i.ridx2] < i.rval); break;
-        case instruction::ctoc5:
-             context[i.lidx]
-               = context[i.ridx] * (context[i.ridx2] <= i.rval); break;
-        case instruction::ctoc6:
-             context[i.lidx]
-               += context[i.ridx] * (context[i.ridx2] > i.rval); break; } } } };
 // <---
 
 class simulation_database
@@ -300,11 +192,12 @@ int simulator::chart::y_screen(float y_real)
 // <---
 
 // ---> simulator window constructor
-simulator::window::window()
+simulator::window::window(struct simulator::params sim_params)
 : Fl_Window(640, 480, "Simulator"),
   ch(0, 0, 640, 320),
   params(5, 325, 630, 125),
   run_btn(575, 455, 60, 20, "Run"),
+  sim_params(sim_params),
   x_max(0), x_min(0), y_max(0), y_min(0), endpoint(0), Ts(0)
 { size_range(640, 480); params.buffer(&buf); set_modal(); show();
   run_btn.callback(run_btn_cb, this); }
@@ -341,14 +234,15 @@ void simulator::window::line::clear()
 void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
 { window* that = (window*)arg;
 
+  if (!context(ROOT/"solution")) { return; }
+
   that->lines.clear(); that->ch.lines.clear();
   that->parse(that->buf.text());
 
   // ---> preparing simulation database
   simulation_database sim_base((that->endpoint / that->Ts) + 1);
-  // TODO: get the inputs and outputs from the context[ROOT/"simulation params"]
-  // for (std::string item : that->sim_params.inputs ) { sim_base.i(item); }
-  // for (std::string item : that->sim_params.outputs) { sim_base.o(item); }
+  for (std::string item : that->sim_params.inputs ) { sim_base.i(item); }
+  for (std::string item : that->sim_params.outputs) { sim_base.o(item); }
   // <---
 
   // ---> fill database with the input signals
@@ -367,16 +261,174 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
       else if (s.type == "meander")
       { y = meander(s.delay, s.period, s.ratio, s.v_min, s.v_max, x); }
       else if (s.type == "sawtooth")
-      { y= sawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
+      { y = sawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
       else if (s.type == "rsawtooth")
       { y = rsawtooth(s.delay, s.period, s.v_min, s.v_max, x); }
 
       sim_base.i(s.input_name).values[i] = y; } }
   // <---
 
-  // TODO: fill simulation runtime commands, repeat it from the code generator
+  float inputs[(int)context[ROOT/"solution"/"inputs num"]];
+  float outputs[(int)context[ROOT/"solution"/"outputs num"]];
+  float ctx[(int)context[ROOT/"solution"/"context num"]];
 
-  // TODO: run the runtime as was in previous commit
+  for (unsigned int i = 0;
+       i < (int)context[ROOT/"solution"/"inputs num"];
+       i++)
+  { inputs[i] = 0; }
+
+  for (unsigned int i = 0;
+       i < (int)context[ROOT/"solution"/"outputs num"];
+       i++)
+  { outputs[i] = 0; }
+
+  for (unsigned int i = 0;
+       i < (int)context[ROOT/"solution"/"context num"];
+       i++)
+  { ctx[i] = 0; }
+
+  for (unsigned int i = 0; i < sim_base.size(); i++)
+  { unsigned int ctr = 0;
+    for (std::string input : that->sim_params.inputs)
+    { inputs[ctr] = sim_base.i(input).values[i]; ctr++; }
+
+    for (std::string step : context.ls(ROOT/"solution"/"sequence"))
+    { std::string cmd = context[ROOT/"solution"/"sequence"/step/"cmd"];
+
+      if (cmd == "net = input")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int input = context[ROOT/"solution"/"sequence"/step/"input"];
+        ctx[net] = inputs[input]; }
+      
+      else if (cmd == "output = net")
+      { int output = context[ROOT/"solution"/"sequence"/step/"output"];
+        int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        outputs[output] = ctx[net]; }
+      
+      else if (cmd == "net = value")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        float value = context[ROOT/"solution"/"sequence"/step/"value"];
+        context[net] = value; }
+      
+      else if (cmd == "net = net1 + net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net] = ctx[net1] + ctx[net2]; }
+      
+      else if (cmd == "net = net1 - net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net] = ctx[net1] - ctx[net2]; }
+      
+      else if (cmd == "net = net1 * net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net] = ctx[net1] * ctx[net2]; }
+      
+      else if (cmd == "net = net1 / net2")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net] = ctx[net1] / ctx[net2]; }
+      
+      else if (cmd == "net = unit[num]")
+      { int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        ctx[net] = ctx[unit_num]; }
+      
+      else if (cmd == "unit[num1] = unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        ctx[unit_num1] = ctx[unit_num2]; }
+      
+      else if (cmd == "unit[num] = net")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        int net = context[ROOT/"solution"/"sequence"/step/"net"];
+        ctx[unit_num] = ctx[net]; }
+      
+      else if (cmd == "unit[num] = val")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[unit_num] = val; }
+      
+      else if (cmd == "unit[num1] += val * unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[unit_num1] += val * ctx[unit_num2]; }
+      
+      else if (cmd == "unit[num1] -= val * unit[num2]")
+      { int unit_num1 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
+        int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                      + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[unit_num1] -= val * ctx[unit_num2]; }
+      
+      else if (cmd == "unit[num] /= val")
+      { int unit_num = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
+                     + (int)context[ROOT/"solution"/"sequence"/step/"num"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[unit_num] /= val; }
+      
+      else if (cmd == "net1 = net2")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net1] = ctx[net2]; }
+      
+      else if (cmd == "net1 = val * net2")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[net1] = val * ctx[net2]; }
+      
+      else if (cmd == "net1 = net2 * (net2 > 0)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net1] = ctx[net2] * (ctx[net2] > 0); }
+      
+      else if (cmd == "net1 -= net2 * (net2 < 0)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net1] -= ctx[net2] * (ctx[net2] < 0); }
+      
+      else if (cmd == "net1 = val * (net2 >= val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[net1] = val * (ctx[net2] >= val); }
+      
+      else if (cmd == "net1 += net2 * (net2 < val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[net1] += ctx[net2] * (ctx[net2] < val); }
+      
+      else if (cmd == "net1 = val * (net2 <= val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[net1] = val * (ctx[net2] <= val); }
+      
+      else if (cmd == "net1 += net2 * (net2 > val)")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
+        ctx[net1] += ctx[net2] * (ctx[net2] > val); } }
+
+    ctr = 0;
+    for (std::string output : that->sim_params.outputs)
+    { sim_base.o(output).values[i] = outputs[ctr]; ctr++; } }
 
   // ---> push the simulation data to the chart
   for (line& l : that->lines)

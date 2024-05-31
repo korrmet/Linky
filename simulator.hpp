@@ -12,6 +12,21 @@
 
 namespace simulator {
 
+// ---> simulation input parameters
+struct params
+{ std::string circuit_name; // equal to the function name and file name
+  
+  // size of this list is equal <name>_inputs_size macro definition
+  // position of the input inside this list is equal to the macro definitions
+  std::list <std::string> inputs; 
+
+  // size of this list is equal <name>_outputs_size macro definition
+  // position of the output inside this list is equal to the macro definitions
+  std::list <std::string> outputs;
+
+  unsigned int context_size; };
+// <---
+
 // ---> simulation output chart
 class chart : public Fl_Widget
 { public:
@@ -33,12 +48,14 @@ class chart : public Fl_Widget
 // ---> simulator window
 class window : public Fl_Window
 { public:
-  window();
+  window(struct params sim_params);
 
   virtual void resize(int x, int y, int w, int h);
   chart ch; Fl_Text_Editor params; Fl_Text_Buffer buf; Fl_Button run_btn;
 
   private:
+  struct params sim_params;
+
   struct signal
   { signal();
     void clear();

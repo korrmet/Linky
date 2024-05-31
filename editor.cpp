@@ -1474,48 +1474,22 @@ void editor::window::control_cb(Fl_Widget* w, void* arg)
         context.ls(ROOT/"sequence errors").size()) { fail = true; }
     if (fail) { return; }
 
+    bus(IM("solve"));
     bus(IM("screen update"));
 
     // preparing simulation parameters
-    context.del(ROOT/"simulation params");
-    unsigned int counter = 0;
+    simulator::params sp;
+    
     for (std::string input : circuit.ls(ROOT/"inputs"))
-    { context[ROOT/"simulation params"/"inputs"/input] = (int)counter;
-      counter++; }
-
-    counter = 0;
+    { sp.inputs.push_back((std::string)
+                          circuit[ROOT/"inputs"/input/"name"]); }
+    
     for (std::string output : circuit.ls(ROOT/"outputs"))
-    { context[ROOT/"simulation params"/"outputs"/output] = (int)counter;
-      counter++; }
-
-    unsigned int context_size = 0;
-    for (std::string unit : circuit.ls(ROOT/"units"))
-    { std::string utype = circuit[ROOT/"units"/unit/"type"];
-
-      if (utype == "delay")
-      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
-        context_size += (int)circuit[ROOT/"units"/unit/"value"]; }
-
-      if (utype == "function")
-      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
-        std::string num_poly = circuit[ROOT/"units"/unit/"numerator poly"];
-        std::string den_poly = circuit[ROOT/"units"/unit/"denominator poly"];
-        unsigned int num_count = 0;
-        unsigned int den_count = 0;
-        for (char c : num_poly) { if (c == ';') { num_count++; } }
-        for (char c : den_poly) { if (c == ';') { den_count++; } }
-        context_size += num_count;
-        context_size += den_count; }
-
-      if (utype == "loopback")
-      { context[ROOT/"simulation params"/"units"/unit] = (int)context_size;
-        context_size += (int)circuit[ROOT/"units"/unit/"value"] - 1; } }
-
-    for (std::string net : context.ls(ROOT/"network"))
-    { context[ROOT/"simulation params"/"nets"/net] = (int)context_size;
-      context_size++; }
-
-    simulator::window sim;
+    { sp.outputs.push_back((std::string)
+                           circuit[ROOT/"outputs"/output/"name"]); }
+    
+    sp.context_size = (int)context[ROOT/"solution"/"context num"];
+    simulator::window sim(sp);
     while (sim.shown()) { Fl::wait(); } }
 
   else { bus(IM(cmd)); } }

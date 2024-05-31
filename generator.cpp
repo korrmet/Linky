@@ -161,7 +161,7 @@ void generator::handler(void* ctx, IM mess)
                       + (int)context[ROOT/"solution"/"sequence"/step/"num1"];
         int unit_num2 = (int)context[ROOT/"solution"/"sequence"/step/"unit"]
                       + (int)context[ROOT/"solution"/"sequence"/step/"num2"];
-        float val = 0;
+        float val = context[ROOT/"solution"/"sequence"/step/"val"];
         print(source, "  ctx[%d] -= %f * ctx[%d];\n",
               unit_num1, val, unit_num2); }
       
@@ -233,6 +233,8 @@ void generator::handler(void* ctx, IM mess)
   // <--- generate code
   
   // ---> generate code
+  // this is 100% working code and should be used for reference for nearest
+  // time, until bugs would not be solved
   if (mess == "_generate code")
   { std::string header; std::string source;
     std::string tmp = context[ROOT/"circuit file path"];
