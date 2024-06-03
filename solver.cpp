@@ -201,7 +201,7 @@ void solver::handler(void* ctx, IM mess)
             context[ROOT/"solution"/"sequence"/step_counter/"unit"] = unit;
             context[ROOT/"solution"/"sequence"/step_counter/"num1"] = i;
             context[ROOT/"solution"/"sequence"/step_counter/"num2"] = i + 1;
-            step_counter++;
+            step_counter++; }
 
             context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
             = "unit[num] = net";
@@ -209,7 +209,7 @@ void solver::handler(void* ctx, IM mess)
             context[ROOT/"solution"/"sequence"/step_counter/"num"]
             = num_count - 1;
             context[ROOT/"solution"/"sequence"/step_counter/"net"]  = inet;
-            step_counter++; }
+            step_counter++;
 
           // manage denominator delays
           for (int i = 0; i < den_count - 1; i++)
