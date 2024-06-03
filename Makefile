@@ -19,7 +19,7 @@ build_type = release
 ifeq ($(build_type),debug)
 COMPILE_FLAGS += -DDEBUG
 endif
-COMPILE_FLAGS += -DVERSION="\"v0.1 alpha\""
+COMPILE_FLAGS += -DVERSION="\"v0.2 alpha\""
 COMPILE_FLAGS += -I./Independency
 
 linky: app.o editor.o generator.o simulator.o solver.o
@@ -27,8 +27,6 @@ linky: app.o editor.o generator.o simulator.o solver.o
 
 run: linky
 	./linky
-
-linky.AppImage: linky
 
 app.o: app.cpp app.hpp
 	$(CXX) -c app.cpp -o app.o $(COMPILE_FLAGS)

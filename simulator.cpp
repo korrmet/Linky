@@ -74,7 +74,7 @@ sine(float delay, float period, float v_min, float v_max, float x)
 { if (x < delay) { return v_min; }
   float amplitude = v_max - v_min;
   float k = 2 * PI / period;
-  return std::sin(k * (x - delay)); }
+  return v_min + (amplitude / 2) * (1 + std::sin(k * (x - delay))); }
 // <---
 
 // ---> single step
