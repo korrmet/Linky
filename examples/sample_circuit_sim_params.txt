@@ -1,0 +1,7 @@
+parameters:x_min=0;x_max=10;y_min=-1.5;y_max=1.5;endpoint=10;Ts=0.1;
+y_markers:0;-1;1;
+x_markers:1;6.4;
+signal:name=I_0;type=step;delay=1;v_min=0;v_max=0.01;
+line:name=I_0;type=input;color=00FF00;
+line:name=O_0;type=output;color=0000FF;
+
