@@ -286,6 +286,145 @@ make. Default target build binary and runs it.
 For now it's a Linux-only program and it still requires FLTK library and gcc,
 but there are some plans to make it cross-platform and compiler-independend.
 
+# Hacking
+
+The core concept of this project conjuncted with Independency library and
+its usage. Main idea is using dynamic global heirarchical structures.
+For now there is three structures: circuit, context and params (this one
+isn't uset yet). In a first glance it may looks overkill, because logically
+there is no any difference between regular structures. But it have an advantage:
+it expands the time gap between you started the implementation and project
+reach point when it should be refactored if you want implement features without
+pain. Independency provides dynamic structure that highly protected from many
+kinds of access errors. For example, there is no problem to use the value
+of the unexisted variable, program would not crash, you may easily fix the
+error another way. That's why development speed increased.
+
+But this approach have an other side. It accumulates a lot of little errors,
+there are thousands ways to garbage the project. And in some point you must
+to describe how it's actually working, because the real complexity is hiding
+behind the similarity of usage, and you must reveal it.
+
+I think it's obvious that I reached this point. And that's why this section
+written and would be grow together with code from now. But I not guarantee
+that this section would be enough to clearly understand the project.
+
+## Circuit structure
+
+<img src="./doc/diagram_circuit.png" width="300">
+
+### Constant unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<float\> numeric value of the constant |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Delay unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<int\> delay (samples) |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Sum unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| inputs/0/x,y | coordinates of the horizontal signal line (circuit grid units) |
+| inputs/1/x,y | coordinates of the vertical signal line (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Difference unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| inputs/0/x,y | coordinates of the horizontal signal line (circuit grid units) |
+| inputs/1/x,y | coordinates of the vertical signal line (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Product unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| inputs/0/x,y | coordinates of the horizontal signal line (circuit grid units) |
+| inputs/1/x,y | coordinates of the vertical signal line (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Division unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| inputs/0/x,y | coordinates of the horizontal signal line (circuit grid units) |
+| inputs/1/x,y | coordinates of the vertical signal line (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Function unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| function name | \<string\> displayed name |
+| numerator poly | \<string\> coefficients of the numerator polynom |
+| denominator poly | \<string\> coefficients of the denominator polynom |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Loopback unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<int\> loopback delay (samples) |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Coeff unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<float\> value of the coefficient |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### ABS unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Limit max unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<float\> maximum value |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+### Limit min unit
+
+| field | desc |
+| --- | --- |
+| type | \<string\> identifier of type |
+| value | \<float\> minimum value |
+| inputs/0/x,y | coordinates of the single input (circuit grid units) |
+| outputs/0/x,y | coordinates of the single output (circuit grid units) |
+
+## Context structure
+
+<img src="./doc/diagram_context.png" width="300">
+
 # License
 
 Asshole Public Licence (APL):
