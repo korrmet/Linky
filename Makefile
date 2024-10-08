@@ -19,7 +19,7 @@ build_type = release
 ifeq ($(build_type),debug)
 COMPILE_FLAGS += -DDEBUG
 endif
-COMPILE_FLAGS += -DVERSION="\"v0.2 alpha\""
+COMPILE_FLAGS += -DVERSION="\"v0.3 alpha\""
 COMPILE_FLAGS += -I./Independency
 
 linky: app.o editor.o generator.o simulator.o solver.o
