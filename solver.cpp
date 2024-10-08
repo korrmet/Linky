@@ -385,7 +385,74 @@ void solver::handler(void* ctx, IM mess)
           context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
           context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
           context[ROOT/"solution"/"sequence"/step_counter/"val"]  = value;
-          step_counter++; } } } }
+          step_counter++; }
+
+        else if (utype == "more")
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
+
+          int onet  = context[ROOT/"solution"/"network"/onid];
+          int i1net = context[ROOT/"solution"/"network"/i0nid];
+          int i2net = context[ROOT/"solution"/"network"/i1nid];
+          
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 = net2 > net3";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = i1net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net3"] = i2net;
+          step_counter++;
+        }
+
+        else if (utype == "less")
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
+
+          int onet  = context[ROOT/"solution"/"network"/onid];
+          int i1net = context[ROOT/"solution"/"network"/i0nid];
+          int i2net = context[ROOT/"solution"/"network"/i1nid];
+          
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 = net2 < net3";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = i1net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net3"] = i2net;
+          step_counter++;
+        }
+
+        else if (utype == "eq")
+        { std::string onid  = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string i0nid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+          std::string i1nid = circuit[ROOT/"units"/id/"inputs"/1/"net"];
+
+          int onet  = context[ROOT/"solution"/"network"/onid];
+          int i1net = context[ROOT/"solution"/"network"/i0nid];
+          int i2net = context[ROOT/"solution"/"network"/i1nid];
+          
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 = net2 == net3";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = i1net;
+          context[ROOT/"solution"/"sequence"/step_counter/"net3"] = i2net;
+          step_counter++;
+        }
+
+        else if (utype == "not")
+        { std::string onid = circuit[ROOT/"units"/id/"outputs"/0/"net"];
+          std::string inid = circuit[ROOT/"units"/id/"inputs"/0/"net"];
+
+          int onet = context[ROOT/"solution"/"network"/onid];
+          int inet = context[ROOT/"solution"/"network"/inid];
+
+          context[ROOT/"solution"/"sequence"/step_counter/"cmd"]
+          = "net1 = net2 <= 0";
+          context[ROOT/"solution"/"sequence"/step_counter/"net1"] = onet;
+          context[ROOT/"solution"/"sequence"/step_counter/"net2"] = inet;
+          step_counter++;
+        }
+      
+      } } }
   // <--- solve
 
   // ---> check circuit errors

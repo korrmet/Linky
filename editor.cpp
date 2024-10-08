@@ -289,6 +289,10 @@ static Fl_Button* coeff_button         = nullptr;
 static Fl_Button* abs_button           = nullptr;
 static Fl_Button* limit_max_button     = nullptr;
 static Fl_Button* limit_min_button     = nullptr;
+static Fl_Button* more_button          = nullptr;
+static Fl_Button* less_button          = nullptr;
+static Fl_Button* eq_button            = nullptr;
+static Fl_Button* not_button           = nullptr;
 // <---
 
 editor::workspace::workspace(int x, int y, int w, int h)
@@ -339,6 +343,13 @@ int editor::workspace::handle(int event)
     else if (Fl::event_key() == 'm')
     { if (context[ROOT/"shift"] == 1) { bus(IM("add min limit")); }
       if (context[ROOT/"shift"] == 0) { bus(IM("add max limit")); } }
+    else if (Fl::event_key() == '.')
+    { if (context[ROOT/"shift"] == 1) { bus(IM("add more unit")); } }
+    else if (Fl::event_key() == ',')
+    { if (context[ROOT/"shift"] == 1) { bus(IM("add less unit")); } }
+    else if (Fl::event_key() == '=') { bus(IM("add eq unit")); }
+    else if (Fl::event_key() == '1')
+    { if (context[ROOT/"shift"] == 1) { bus(IM("add not unit")); } }
     else if (Fl::event_key() == FL_Escape) { bus(IM("end input")); }
     else if (Fl::event_key() == FL_Delete) { bus(IM("delete")); }
     else if (Fl::event_key() == FL_BackSpace) { bus(IM("delete")); }
@@ -882,6 +893,103 @@ void editor::workspace::draw()
              pixel_w, 2 * (int)context[ROOT/"grid size"],
              FL_ALIGN_LEFT); }
     // <---
+
+    // ---> more
+    else if (circuit[ROOT/"units"/unit/"type"] == "more")
+    { fl_color(BLACK);
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+             2 * (int)context[ROOT/"grid size"],
+             2 * (int)context[ROOT/"grid size"]);
+      fl_draw(">", x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"],
+              FL_ALIGN_CENTER); }
+    // <---
+    
+    // ---> less
+    else if (circuit[ROOT/"units"/unit/"type"] == "less")
+    { fl_color(BLACK);
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+             2 * (int)context[ROOT/"grid size"],
+             2 * (int)context[ROOT/"grid size"]);
+      fl_draw("<", x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"],
+              FL_ALIGN_CENTER); }
+    // <---
+    
+    // ---> eq
+    else if (circuit[ROOT/"units"/unit/"type"] == "eq")
+    { fl_color(BLACK);
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+             2 * (int)context[ROOT/"grid size"],
+             2 * (int)context[ROOT/"grid size"]);
+      fl_draw("=", x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"],
+              FL_ALIGN_CENTER); }
+    // <---
+    
+    // ---> not
+    else if (circuit[ROOT/"units"/unit/"type"] == "not")
+    { fl_color(BLACK);
+      fl_font(FL_COURIER, 2 * (int)context[ROOT/"grid size"]);
+      int _x = circuit[ROOT/"units"/unit/"x"];
+      int _y = circuit[ROOT/"units"/unit/"y"];
+
+      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+
+      fl_rect(x() + x_screen(_x), y() + y_screen(_y),
+             2 * (int)context[ROOT/"grid size"],
+             2 * (int)context[ROOT/"grid size"]);
+      fl_draw("!", x() + x_screen(_x), y() + y_screen(_y),
+              2 * (int)context[ROOT/"grid size"],
+              2 * (int)context[ROOT/"grid size"],
+              FL_ALIGN_CENTER); }
+    // <---
   }
   // <---
 
@@ -1395,6 +1503,62 @@ editor::window::window()
   side_screen.add(limit_min_button);
   // <---
   
+  // ---> more
+  more_button = new Fl_Button(limit_max_button->x(),
+                              limit_max_button->y() + limit_max_button->h() + 5,
+                              limit_max_button->w(),
+                              20, "More [>]");
+  more_button->box(FL_BORDER_BOX);
+  more_button->labelsize(12);
+  more_button->clear_visible_focus();
+  more_button->color(Fl_Color(WHITE));
+  more_button->color2(Fl_Color(BLUE));
+  more_button->callback(control_cb, (void*)"add more unit");
+  side_screen.add(more_button);
+  // <---
+
+  // ---> less
+  less_button = new Fl_Button(limit_min_button->x(),
+                              limit_min_button->y() + limit_min_button->h() + 5,
+                              limit_min_button->w(),
+                              20, "Less [<]");
+  less_button->box(FL_BORDER_BOX);
+  less_button->labelsize(12);
+  less_button->clear_visible_focus();
+  less_button->color(Fl_Color(WHITE));
+  less_button->color2(Fl_Color(BLUE));
+  less_button->callback(control_cb, (void*)"add less unit");
+  side_screen.add(less_button);
+  // <---
+
+  // ---> eq
+  eq_button = new Fl_Button(more_button->x(),
+                            more_button->y() + more_button->h() + 5,
+                            more_button->w(),
+                            20, "Equal [=]");
+  eq_button->box(FL_BORDER_BOX);
+  eq_button->labelsize(12);
+  eq_button->clear_visible_focus();
+  eq_button->color(Fl_Color(WHITE));
+  eq_button->color2(Fl_Color(BLUE));
+  eq_button->callback(control_cb, (void*)"add eq unit");
+  side_screen.add(eq_button);
+  // <---
+
+  // ---> not
+  not_button = new Fl_Button(less_button->x(),
+                             less_button->y() + less_button->h() + 5,
+                             less_button->w(),
+                             20, "Not [!]");
+  not_button->box(FL_BORDER_BOX);
+  not_button->labelsize(12);
+  not_button->clear_visible_focus();
+  not_button->color(Fl_Color(WHITE));
+  not_button->color2(Fl_Color(BLUE));
+  not_button->callback(control_cb, (void*)"add not unit");
+  side_screen.add(not_button);
+  // <---
+
   // dummy group to correct resizing
   Fl_Group* dummy = new Fl_Group(side_screen.x(),
                                  side_screen.y() + side_screen.h(),
@@ -1590,6 +1754,30 @@ void editor::window::handler(void* ctx, IM mess)
     context[ROOT/"edit mode"] = "place min limit";
     that->redraw(); }
 
+  else if (mess == "add more unit")
+  { bus(IM("end input"));
+    more_button->color(GREEN); more_button->redraw();
+    context[ROOT/"edit mode"] = "place more unit";
+    that->redraw(); }
+
+  else if (mess == "add less unit")
+  { bus(IM("end input"));
+    less_button->color(GREEN); less_button->redraw();
+    context[ROOT/"edit mode"] = "place less unit";
+    that->redraw(); }
+
+  else if (mess == "add eq unit")
+  { bus(IM("end input"));
+    eq_button->color(GREEN); eq_button->redraw();
+    context[ROOT/"edit mode"] = "place eq unit";
+    that->redraw(); }
+
+  else if (mess == "add not unit")
+  { bus(IM("end input"));
+    not_button->color(GREEN); not_button->redraw();
+    context[ROOT/"edit mode"] = "place not unit";
+    that->redraw(); }
+
   else if (mess == "edit items")
   { bus(IM("end input"));
     edit_button->color(GREEN); edit_button->redraw();
@@ -1613,6 +1801,10 @@ void editor::window::handler(void* ctx, IM mess)
     abs_button->color(WHITE); abs_button->redraw();
     limit_max_button->color(WHITE); limit_max_button->redraw();
     limit_min_button->color(WHITE); limit_min_button->redraw();
+    more_button->color(WHITE); more_button->redraw();
+    less_button->color(WHITE); less_button->redraw();
+    eq_button->color(WHITE); eq_button->redraw();
+    not_button->color(WHITE); not_button->redraw();
 
     // finalize previous operations if needed
     if (context[ROOT/"edit mode"] == "place wire")
@@ -1724,6 +1916,14 @@ void editor::window::handler(void* ctx, IM mess)
     { bus(IM("place max limit press")); }
     else if (context[ROOT/"edit mode"] == "place min limit")
     { bus(IM("place min limit press")); }
+    else if (context[ROOT/"edit mode"] == "place more unit")
+    { bus(IM("place more unit press")); }
+    else if (context[ROOT/"edit mode"] == "place less unit")
+    { bus(IM("place less unit press")); }
+    else if (context[ROOT/"edit mode"] == "place eq unit")
+    { bus(IM("place eq unit press")); }
+    else if (context[ROOT/"edit mode"] == "place not unit")
+    { bus(IM("place not unit press")); }
     else if (context[ROOT/"edit mode"] == "edit properties")
     { bus(IM("edit")); }
     
@@ -2039,6 +2239,42 @@ void editor::window::handler(void* ctx, IM mess)
     circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
     circuit[ROOT/"units"/idx/"type"] = "limit min";
     circuit[ROOT/"units"/idx/"value"] = 1.0f;
+    that->redraw(); }
+
+  else if (mess == "place more unit press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "more";
+    that->redraw(); }
+
+  else if (mess == "place less unit press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "less";
+    that->redraw(); }
+  
+  else if (mess == "place eq unit press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "eq";
+    that->redraw(); }
+  
+  else if (mess == "place not unit press")
+  { circuit[ROOT/"units"];
+    std::list<std::string> units = circuit.ls(ROOT/"units");
+    int idx = units.size() ? std::stoi(units.back()) + 1 : 0;
+    circuit[ROOT/"units"/idx/"x"] = context[ROOT/"cursor pos"/"x"];
+    circuit[ROOT/"units"/idx/"y"] = context[ROOT/"cursor pos"/"y"];
+    circuit[ROOT/"units"/idx/"type"] = "not";
     that->redraw(); }
 }
 // <---

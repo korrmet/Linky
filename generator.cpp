@@ -221,6 +221,29 @@ void generator::handler(void* ctx, IM mess)
         float val = context[ROOT/"solution"/"sequence"/step/"val"];
         print(source, "  ctx[%d] += ctx[%d] * (ctx[%d] > %f);\n",
               net1, net2, net2, val); }
+
+      else if (cmd == "net1 = net2 > net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        print(source, "  ctx[%d] = ctx[%d] > ctx[%d];\n", net1, net2, net3); }
+
+      else if (cmd == "net1 = net2 < net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        print(source, "  ctx[%d] = ctx[%d] < ctx[%d];\n", net1, net2, net3); }
+
+      else if (cmd == "net1 = net2 == net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        print(source, "  ctx[%d] = ctx[%d] == ctx[%d];\n", net1, net3, net3); }
+
+      else if (cmd == "net1 = net2 <= 0")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        print(source, "  ctx[%d] = ctx[%d] <= %f;\n", net1, net2, 0); }
     }
 
     print(source, "}\n");

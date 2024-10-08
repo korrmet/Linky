@@ -424,7 +424,30 @@ void simulator::window::run_btn_cb(Fl_Widget* w, void* arg)
       { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
         int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
         float val = context[ROOT/"solution"/"sequence"/step/"val"];
-        ctx[net1] += ctx[net2] * (ctx[net2] > val); } }
+        ctx[net1] += ctx[net2] * (ctx[net2] > val); }
+    
+      else if (cmd == "net1 = net2 > net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        ctx[net1] = ctx[net2] > ctx[net3]; }
+
+      else if (cmd == "net1 = net2 < net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        ctx[net1] = ctx[net2] < ctx[net3]; }
+      
+      else if (cmd == "net1 = net2 == net3")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        int net3 = context[ROOT/"solution"/"sequence"/step/"net3"];
+        ctx[net1] = ctx[net2] == ctx[net3]; }
+
+      else if (cmd == "net1 = net2 <= 0")
+      { int net1 = context[ROOT/"solution"/"sequence"/step/"net1"];
+        int net2 = context[ROOT/"solution"/"sequence"/step/"net2"];
+        ctx[net1] = ctx[net2] <= 0; } }
 
     ctr = 0;
     for (std::string output : that->sim_params.outputs)
