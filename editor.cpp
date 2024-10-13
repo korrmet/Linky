@@ -539,8 +539,19 @@ void editor::workspace::draw()
       _x[3] = _x[0];           _y[3] = _y[0] + 2;
       _x[4] = _x[0];           _y[4] = _y[0];
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1;
+      int rotate_pos = 0;
+
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0] + label_w;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x[0];
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y[0] + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -593,14 +604,49 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
+      
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
               2 * (int)context[ROOT/"grid size"],
@@ -621,14 +667,49 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
+      
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
               2 * (int)context[ROOT/"grid size"],
@@ -644,15 +725,50 @@ void editor::workspace::draw()
     { fl_color(BLACK);
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
+
+      int rotate_pos = 0;
       
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
               2 * (int)context[ROOT/"grid size"],
@@ -672,15 +788,50 @@ void editor::workspace::draw()
     { fl_color(BLACK);
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
+
+      int rotate_pos = 0;
       
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
               2 * (int)context[ROOT/"grid size"],
@@ -708,11 +859,25 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+        
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -779,11 +944,25 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -811,11 +990,25 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -847,11 +1040,25 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+        
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -883,11 +1090,25 @@ void editor::workspace::draw()
       _x[3] = _x0 - 2;           _y[3] = _y0 + 2;
       _x[4] = _x0;               _y[4] = _y0;
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x0 + label_w + 1;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y0 + 1;
+        
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x0 - 1;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y0 + 1; }
 
       for (unsigned int i = 0; i < 4; i++)
       { fl_line(x() + x_screen(_x[i    ]), y() + y_screen(_y[i    ]),
@@ -906,14 +1127,49 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
+      
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
              2 * (int)context[ROOT/"grid size"],
@@ -931,14 +1187,49 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
+      
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
              2 * (int)context[ROOT/"grid size"],
@@ -956,14 +1247,49 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
+      
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 4;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
 
-      circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
-      circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y + 2;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 2)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+        
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 3)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"inputs"/1/"x"] = _x + 1;
+        circuit[ROOT/"units"/unit/"inputs"/1/"y"] = _y;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
       
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
              2 * (int)context[ROOT/"grid size"],
@@ -981,11 +1307,25 @@ void editor::workspace::draw()
       int _x = circuit[ROOT/"units"/unit/"x"];
       int _y = circuit[ROOT/"units"/unit/"y"];
 
-      circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
-      circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+      int rotate_pos = 0;
 
-      circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
-      circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1;
+      if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+      { rotate_pos = (int)circuit[ROOT/"units"/unit/"rotate pos"];
+        rotate_pos %= 2;
+        circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+
+      if (rotate_pos == 0)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
+      else if (rotate_pos == 1)
+      { circuit[ROOT/"units"/unit/"inputs"/0/"x"] = _x + 2;
+        circuit[ROOT/"units"/unit/"inputs"/0/"y"] = _y + 1;
+
+        circuit[ROOT/"units"/unit/"outputs"/0/"x"] = _x;
+        circuit[ROOT/"units"/unit/"outputs"/0/"y"] = _y + 1; }
 
       fl_rect(x() + x_screen(_x), y() + y_screen(_y),
              2 * (int)context[ROOT/"grid size"],
@@ -1910,19 +2250,17 @@ void editor::window::handler(void* ctx, IM mess)
   
     bus(IM("cursor update")); }
 
-  else if (mess == "rotate")
+  else if (mess == "rotate press")
   { if (!context(ROOT/"highlight")) { return; }
     else if (!(context[ROOT/"highlight"/"type"] == "unit")) { return; }
 
     std::string unit = context[ROOT/"highlight"/"unit"];
 
-    int rotate_pos = 1;
-    if (!!context(ROOT/"units"/unit/"rotate pos"))
-    { context[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
-    else
-    { rotate_pos = (int)context[ROOT/"units"/unit/"rotate pos"];
-      rotate_pos++;
-      context[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+    int rotate_pos = 0;
+    if (!!circuit(ROOT/"units"/unit/"rotate pos"))
+    { rotate_pos = circuit[ROOT/"units"/unit/"rotate pos"]; }
+    rotate_pos++;
+    circuit[ROOT/"units"/unit/"rotate pos"] = rotate_pos;
     that->redraw(); }
 
   else if (mess == "edit")
