@@ -274,6 +274,8 @@ static Fl_Button* generate_button      = nullptr;
 static Fl_Button* check_circuit_button = nullptr;
 static Fl_Button* clear_errors_button  = nullptr;
 static Fl_Button* edit_button          = nullptr;
+static Fl_Button* rotate_button        = nullptr;
+static Fl_Button* external_button      = nullptr;
 static Fl_Button* wire_button          = nullptr;
 static Fl_Button* input_button         = nullptr;
 static Fl_Button* output_button        = nullptr;
@@ -324,7 +326,10 @@ int editor::workspace::handle(int event)
 { if (event == FL_FOCUS) { return 1; }
 
   if (event == FL_KEYDOWN)
-  { if      (Fl::event_key() == 'e') { bus(IM("edit items")); }
+  { if      (Fl::event_key() == 'e')
+    { if (context[ROOT/"shift"] == 0) { bus(IM("edit items")); }
+      if (context[ROOT/"shift"] == 1) { bus(IM("add external")); } }
+    else if (Fl::event_key() == 'r') { bus(IM("rotate mode")); }
     else if (Fl::event_key() == 'w') { bus(IM("add wire")); }
     else if (Fl::event_key() == 'i') { bus(IM("add input")); }
     else if (Fl::event_key() == 'o') { bus(IM("add output")); }
@@ -1053,6 +1058,12 @@ void editor::workspace::draw()
     { std::string unit = context[ROOT/"highlight"/"unit"];
       int sx = x_screen((int)circuit[ROOT/"units"/unit/"x"]);
       int sy = y_screen((int)circuit[ROOT/"units"/unit/"y"]);
+      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
+
+    else if (context[ROOT/"highlight"/"type"] == "rotate")
+    { std::string unit = context[ROOT/"highlight"/"unit"];
+      int sx = x_screen((int)circuit[ROOT/"highlight"/unit/"x"]);
+      int sy = y_screen((int)circuit[ROOT/"units"/unit/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); } }
 
   // units inputs and outputs (only when editing or highlighting wires)
@@ -1110,7 +1121,31 @@ void editor::workspace::draw()
       fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
              CSIZE*2, CSIZE*2, 0.0, 360.0); }
     // <---
+  }
+
+  // ---> rotation highlight
+  if (context[ROOT/"edit mode"] == "rotate")
+  { for (std::string unit : circuit.ls(ROOT/"units"))
+    { // ---> inputs
+      fl_line_style(FL_SOLID, 1); fl_color(GREEN);
+      for (std::string input : circuit.ls(ROOT/"units"/unit/"inputs"))
+      { int _x = circuit[ROOT/"units"/unit/"inputs"/input/"x"];
+        int _y = circuit[ROOT/"units"/unit/"inputs"/input/"y"];
+        fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
+               CSIZE*2, CSIZE*2, 0.0, 360.0); }
+      // <---
+      
+      // ---> outputs
+      fl_line_style(FL_SOLID, 1); fl_color(BLUE);
+      for (std::string output : circuit.ls(ROOT/"units"/unit/"outputs"))
+      { int _x = circuit[ROOT/"units"/unit/"outputs"/output/"x"];
+        int _y = circuit[ROOT/"units"/unit/"outputs"/output/"y"];
+        fl_pie(x() + x_screen(_x) - CSIZE, y() + y_screen(_y) - CSIZE,
+               CSIZE*2, CSIZE*2, 0.0, 360.0); }
+      // <---
     }
+  }
+  // <---
 
   // editable items
   if (context[ROOT/"edit mode"] == "edit properties")
@@ -1290,10 +1325,38 @@ editor::window::window()
   side_screen.add(edit_button);
   // <---
   
+  // ---> rotate
+  rotate_button = new Fl_Button(edit_button->x() + edit_button->w() + 5,
+                                edit_button->y(),
+                                edit_button->w(),
+                                20,  "Rotate [R]");
+  rotate_button->box(FL_BORDER_BOX);
+  rotate_button->labelsize(12);
+  rotate_button->clear_visible_focus();
+  rotate_button->color(Fl_Color(WHITE));
+  rotate_button->color2(Fl_Color(BLUE));
+  rotate_button->callback(control_cb, (void*)"rotate mode");
+  side_screen.add(rotate_button);
+  // <---
+
+  // ---> external
+  external_button = new Fl_Button(edit_button->x(),
+                                  edit_button->y() + edit_button->h() + 5,
+                                  edit_button->w(),
+                                  20, "External[^E]");
+  external_button->box(FL_BORDER_BOX);
+  external_button->labelsize(12);
+  external_button->clear_visible_focus();
+  external_button->color(Fl_Color(WHITE));
+  external_button->color2(Fl_Color(BLUE));
+  external_button->callback(control_cb, (void*)"add external");
+  side_screen.add(external_button);
+  // <---
+  
   // ---> wire
-  wire_button = new Fl_Button(edit_button->x() + edit_button->w() + 5,
-                              edit_button->y(),
-                              edit_button->w(),
+  wire_button = new Fl_Button(external_button->x() + external_button->w() + 5,
+                              external_button->y(),
+                              external_button->w(),
                               20, "Wire [W]");
   wire_button->box(FL_BORDER_BOX);
   wire_button->labelsize(12);
@@ -1305,9 +1368,9 @@ editor::window::window()
   // <---
   
   // ---> input
-  input_button = new Fl_Button(edit_button->x(),
-                               edit_button->y() + edit_button->h() + 5,
-                               edit_button->w(),
+  input_button = new Fl_Button(external_button->x(),
+                               external_button->y() + external_button->h() + 5,
+                               external_button->w(),
                                20, "Input [I]");
   input_button->box(FL_BORDER_BOX);
   input_button->labelsize(12);
@@ -1493,7 +1556,7 @@ editor::window::window()
                                      + limit_max_button->w() + 5,
                                    limit_max_button->y(),
                                    limit_max_button->w(),
-                                   20, "Limit Min [~M]");
+                                   20, "Limit Min [^M]");
   limit_min_button->box(FL_BORDER_BOX);
   limit_min_button->labelsize(12);
   limit_min_button->clear_visible_focus();
@@ -1784,8 +1847,22 @@ void editor::window::handler(void* ctx, IM mess)
     context[ROOT/"edit mode"] = "edit properties";
     that->redraw(); }
 
+  else if (mess == "rotate mode")
+  { bus(IM("end input"));
+    rotate_button->color(GREEN); rotate_button->redraw();
+    context[ROOT/"edit mode"] = "rotate";
+    that->redraw(); }
+
+  else if (mess == "add external")
+  { bus(IM("end input"));
+    external_button->color(GREEN); external_button->redraw();
+    context[ROOT/"edit mode"] = "place external";
+    that->redraw(); }
+
   else if (mess == "end input")
   { edit_button->color(WHITE); edit_button->redraw();
+    rotate_button->color(WHITE); rotate_button->redraw();
+    external_button->color(WHITE); external_button->redraw();
     wire_button->color(WHITE); wire_button->redraw();
     input_button->color(WHITE); input_button->redraw();
     output_button->color(WHITE); output_button->redraw();
