@@ -1058,12 +1058,6 @@ void editor::workspace::draw()
     { std::string unit = context[ROOT/"highlight"/"unit"];
       int sx = x_screen((int)circuit[ROOT/"units"/unit/"x"]);
       int sy = y_screen((int)circuit[ROOT/"units"/unit/"y"]);
-      fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); }
-
-    else if (context[ROOT/"highlight"/"type"] == "rotate")
-    { std::string unit = context[ROOT/"highlight"/"unit"];
-      int sx = x_screen((int)circuit[ROOT/"highlight"/unit/"x"]);
-      int sy = y_screen((int)circuit[ROOT/"units"/unit/"y"]);
       fl_rectf(x() + sx - CSIZE, y() + sy - CSIZE, CSIZE*2, CSIZE*2); } }
 
   // units inputs and outputs (only when editing or highlighting wires)
@@ -1916,6 +1910,21 @@ void editor::window::handler(void* ctx, IM mess)
   
     bus(IM("cursor update")); }
 
+  else if (mess == "rotate")
+  { if (!context(ROOT/"highlight")) { return; }
+    else if (!(context[ROOT/"highlight"/"type"] == "unit")) { return; }
+
+    std::string unit = context[ROOT/"highlight"/"unit"];
+
+    int rotate_pos = 1;
+    if (!!context(ROOT/"units"/unit/"rotate pos"))
+    { context[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+    else
+    { rotate_pos = (int)context[ROOT/"units"/unit/"rotate pos"];
+      rotate_pos++;
+      context[ROOT/"units"/unit/"rotate pos"] = rotate_pos; }
+    that->redraw(); }
+
   else if (mess == "edit")
   { if (!context(ROOT/"highlight")) { return; }
 
@@ -1965,6 +1974,8 @@ void editor::window::handler(void* ctx, IM mess)
 
     if (context[ROOT/"edit mode"] == "place wire")
     { bus(IM("place wire press")); }
+    else if (context[ROOT/"edit mode"] == "rotate")
+    { bus(IM("rotate press")); }
     else if (context[ROOT/"edit mode"] == "place input")
     { bus(IM("place input press")); }
     else if (context[ROOT/"edit mode"] == "place output")
