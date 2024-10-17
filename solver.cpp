@@ -1,5 +1,87 @@
 #include "solver.hpp"
 
+/** \brief Solves the network.
+ *  \details Solution includes enumeration, sizes of inputs, outputs and
+ *           context, and the sequence of actions, that may be used for
+ *           simulation and code generation.
+ *  \param c Storage with circuit to solve.
+ *  \return Storage with solution. */
+static independency::storage circuit_solver(independency::storage c)
+{ independency::storage sol;
+
+  unsigned int inputs_counter = 0;
+  for (std::string i : c.ls(ROOT/"inputs"))
+  { sol[ROOT/"inputs"/i] = (int)inputs_counter; inputs_counter++; }
+  sol[ROOT/"inputs num"] = (int)inputs_counter;
+
+  unsigned int outputs_counter = 0;
+  for (std::string o : c.ls(ROOT/"outptus"))
+  { sol[ROOT/"outputs"/o] = (int)outputs_counter; outputs_counter++; }
+  sol[ROOT/"outputs num"] = (int)outputs_counter;
+
+  unsigned int context_counter = 0;
+  for (std::string unit : c.ls(ROOT/"units"))
+  { std::string utype = c[ROOT/"units"/unit/"type"];
+
+    if (utype == "delay")
+    { sol[ROOT/"units"/unit] = (int)context_counter;
+      context_counter += (int)c[ROOT/"units"/unit/"value"]; }
+
+    else if (utype == "function")
+    { context[ROOT/"solution"/"units"/unit] = (int)context_counter;
+      std::string num_poly = circuit[ROOT/"units"/unit/"numerator poly"];
+      std::string den_poly = circuit[ROOT/"units"/unit/"denominator poly"];
+      unsigned int num_count = 0;
+      unsigned int den_count = 0;
+      for (char ch : num_poly) { if (ch == ';') { num_count++; } }
+      for (char ch : den_poly) { if (ch == ';') { den_count++; } }
+      context_counter += num_count;
+      context_counter += den_count; }
+
+    else if (utype == "loopback")
+    { sol[ROOT/"units"/unit] = (int)context_counter;
+      context_counter += (int)circuit[ROOT/"units"/unit/"value"] - 1; } }
+
+  // make network
+  std::list<std::string> wires = c.ls(ROOT/"wires");
+  while (wires.size())
+  { std::list<std::string> net;
+    net.push_back(wires.front()); wires.pop_front();
+    bool added;
+    do
+    { added = false;
+      for (std::string nw : net)
+      { for (std::string w : wires)
+        { if ((c[ROOT/"wires"/w/0/"x"] == c[ROOT/"wires"/nw/0/"x"] &&
+               c[ROOT/"wires"/w/0/"y"] == c[ROOT/"wires"/nw/0/"y"]) ||
+              (c[ROOT/"wires"/w/0/"x"] == c[ROOT/"wires"/nw/1/"x"] &&
+               c[ROOT/"wires"/w/0/"y"] == c[ROOT/"wires"/nw/1/"y"]) ||
+              (c[ROOT/"wires"/w/1/"x"] == c[ROOT/"wires"/nw/0/"x"] &&
+               c[ROOT/"wires"/w/1/"y"] == c[ROOT/"wires"/nw/0/"y"]) ||
+              (c[ROOT/"wires"/w/1/"x"] == c[ROOT/"wires"/nw/1/"x"] &&
+               c[ROOT/"wires"/w/1/"y"] == c[ROOT/"wires"/nw/1/"y"]))
+        { net.push_back(w); wires.remove(w); added = true; break; } }
+      if (added) { break; } }
+    } while(added);
+
+    std::list<std::string> nets = sol.ls(ROOT/"network");
+    int idx = nets.size() ? std::stoi(nets.back()) + 1 : 0;
+    for (std::string nwire : net) { sol[ROOT/"network"/idx/"wires"/nwire]; } }
+
+  for (std::string net : sol.ls(ROOT/"network"))
+  { sol[ROOT/"network"/net] = (int)context_counter; context_counter++; }
+
+  sol[ROOT/"context num"] = (int)context_counter;
+
+  // scan network
+  // check network
+  // make sequence
+  // check sequence
+  // solve
+
+  return sol;
+}
+
 void solver::handler(void* ctx, IM mess)
 { // ---> solve
   if (mess == "solve")
